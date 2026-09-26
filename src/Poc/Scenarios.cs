@@ -37,7 +37,7 @@ public sealed class Scenarios(string transport, Version orleansVersion, string l
 {
     public static readonly Variant[] All =
     [
-        new("A", "Grain kept alive by Ping, agent forgets S, S's token and its purge metadata are evicted (prod #4006 case)",
+        new("A", "Handshake path: grain kept alive by Ping, agent forgets S, S's token and its purge metadata are evicted",
             "A", Timings.DataMaxAgeInCache, Timings.MetadataMinTimeInCache, Timings.QuietPeriod, KeepAlive: true, Miss: true),
         new("B", "Control: as A, but the grain is idle-collected (no Ping), so the new activation has no expectedToken",
             "A", Timings.DataMaxAgeInCache, Timings.MetadataMinTimeInCache, Timings.QuietPeriod, KeepAlive: false, Miss: true),
@@ -45,7 +45,7 @@ public sealed class Scenarios(string transport, Version orleansVersion, string l
             "C", Timings.DataMaxAgeInCache, Timings.MetadataMinTimeInCache, TimeSpan.Zero, KeepAlive: true, Miss: true),
         new("D", "Control: as A, but the cache still remembers S's last purged token (MetadataMinTimeInCache at its 10 min default)",
             "A", Timings.DataMaxAgeInCache, StreamCacheEvictionOptions.DefaultMetadataMinTimeInCache, Timings.QuietPeriod, KeepAlive: true, Miss: false),
-        new("E", "Warm stream: as A, but event 2 comes while the agent still has S registered (quiet longer than MetadataMinTimeInCache, shorter than StreamInactivityPeriod)",
+        new("E", "Idle-cursor path: as A, but event 2 comes while the agent still has S registered (quiet longer than MetadataMinTimeInCache, shorter than StreamInactivityPeriod)",
             "E", Timings.DataMaxAgeInCache, Timings.MetadataMinTimeInCache, Timings.WarmQuietPeriod, KeepAlive: true, Miss: true),
         new("A-mid", "As A, DataMaxAgeInCache doubled but still shorter than the quiet period",
             "A", Timings.MidDataMaxAgeInCache, Timings.MetadataMinTimeInCache, Timings.QuietPeriod, KeepAlive: true, Miss: true),

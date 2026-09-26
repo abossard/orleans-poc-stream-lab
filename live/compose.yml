@@ -1,7 +1,7 @@
 # Live UI: one backend per Orleans version, each with its own Event Hub (1 partition), plus the emulator and Azurite.
 #   cd live && docker compose up --build     then open http://localhost:8103
 # Only the two backends publish host ports; the emulator and Azurite stay on the compose network.
-name: orleans-poc-4006-ui
+name: orleans-streams-lab-ui
 
 x-backend: &backend
   build: &build
@@ -18,18 +18,18 @@ x-env: &env
 services:
   live-1021:
     <<: *backend
-    container_name: poc4006ui-live-1021
+    container_name: oslui-live-1021
     build: { <<: *build, args: { ORLEANS_VERSION: 10.2.1 } }
     environment: { <<: *env, EVENTHUB_NAME: poc-hub-1021 }
     ports: ["8102:8080"]
   live-1031:
     <<: *backend
-    container_name: poc4006ui-live-1031
+    container_name: oslui-live-1031
     build: { <<: *build, args: { ORLEANS_VERSION: 10.3.1 } }
     environment: { <<: *env, EVENTHUB_NAME: poc-hub-1031 }
     ports: ["8103:8080"]
   emulator:
-    container_name: poc4006ui-emulator
+    container_name: oslui-emulator
     image: mcr.microsoft.com/azure-messaging/eventhubs-emulator:latest
     volumes:
       - ./emulator.json:/Eventhubs_Emulator/ConfigFiles/Config.json
@@ -39,6 +39,6 @@ services:
       ACCEPT_EULA: "Y"
     depends_on: [azurite]
   azurite:
-    container_name: poc4006ui-azurite
+    container_name: oslui-azurite
     image: mcr.microsoft.com/azure-storage/azurite:latest
     command: azurite --blobHost 0.0.0.0 --queueHost 0.0.0.0 --tableHost 0.0.0.0 --skipApiVersionCheck

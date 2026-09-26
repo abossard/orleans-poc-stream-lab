@@ -257,7 +257,7 @@ function StreamRow({ streamKey, events, state, x, now }: { streamKey: string; ev
   return (
     <div className="stream">
       <div className="badges">
-        <b>entity-update/{streamKey}</b>
+        <b>consumer/{streamKey}</b>
         <span className={stream ? 'on' : ''}>{registered}</span>
         {consumer && (
           <span className={cursorStale ? 'bad' : 'on'}>

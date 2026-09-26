@@ -7,7 +7,7 @@ namespace Poc;
 public static class Names
 {
     public const string Provider = "poc";
-    public const string ConsumerNamespace = "entity-update";
+    public const string ConsumerNamespace = "consumer";
     public const string FillerNamespace = "filler";
 }
 
@@ -16,14 +16,14 @@ public sealed record Payload([property: Id(0)] int Version, [property: Id(1)] in
 
 public interface IConsumerGrain : IGrainWithStringKey
 {
-    /// <summary>Like EntityConfigGrain.Update: publish on the grain's own stream.</summary>
+    /// <summary>Publishes on the grain's own stream.</summary>
     Task Update(int version);
 
-    /// <summary>Like EntityConfigGrain.GetConfig: a read that keeps the activation alive and publishes nothing.</summary>
+    /// <summary>A periodic read: keeps the activation alive and publishes nothing.</summary>
     Task<int> Ping();
 }
 
-/// <summary>Mirrors EntityConfigGrain: implicit subscription, ResumeAsync in OnSubscribed, OnErrorAsync only records.</summary>
+/// <summary>Consumer grain with an implicit subscription on its own stream: ResumeAsync in OnSubscribed, OnErrorAsync only records.</summary>
 [ImplicitStreamSubscription(Names.ConsumerNamespace)]
 public sealed class ConsumerGrain(Timeline timeline) : Grain, IConsumerGrain, IStreamSubscriptionObserver, IAsyncObserver<Payload>
 {

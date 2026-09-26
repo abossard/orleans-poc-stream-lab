@@ -6,7 +6,6 @@ const receiver = (v: string, lines: string) =>
 
 export type Term = { term: string; meaning: string; seeIt: string; links: [string, string][] }
 
-// Source lines as cited in ../../why-it-stopped.md.
 export const TERMS: Term[] = [
   {
     term: 'PersistentStreamPullingAgent',
@@ -58,7 +57,7 @@ export const TERMS: Term[] = [
   },
   {
     term: 'DataMinTimeInCache, DataMaxAgeInCache',
-    meaning: 'Eviction: an event is purged once it is older than DataMaxAgeInCache relative to the newest event. PoC 1 s / 3 s, prod 10 s / 30 s.',
+    meaning: 'Eviction: an event is purged once it is older than DataMaxAgeInCache relative to the newest event. PoC 1 s / 3 s, default 5 min / 30 min.',
     seeIt: 'P marker, hatched part of the strip',
     links: [['TimePurgePredicate', gh('10.3.1', 'Orleans.Streaming/Common/PooledCache/TimePurgePredicate.cs', 'L32-L36')]],
   },

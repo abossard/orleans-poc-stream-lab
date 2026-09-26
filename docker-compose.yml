@@ -1,9 +1,9 @@
 # Azure Event Hubs emulator + Azurite (emulator metadata/blob store and the Orleans Azure Table checkpointer).
 # Based on https://github.com/Azure/azure-event-hubs-emulator-installer
-name: orleans-poc-4006
+name: orleans-streams-lab
 services:
   emulator:
-    container_name: poc4006-eventhubs-emulator
+    container_name: osl-eventhubs-emulator
     image: mcr.microsoft.com/azure-messaging/eventhubs-emulator:latest
     volumes:
       - ./emulator/Config.json:/Eventhubs_Emulator/ConfigFiles/Config.json
@@ -17,7 +17,7 @@ services:
     depends_on:
       - azurite
   azurite:
-    container_name: poc4006-azurite
+    container_name: osl-azurite
     image: mcr.microsoft.com/azure-storage/azurite:latest
     command: azurite --blobHost 0.0.0.0 --queueHost 0.0.0.0 --tableHost 0.0.0.0 --skipApiVersionCheck
     ports:

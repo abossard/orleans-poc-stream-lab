@@ -9,23 +9,23 @@ using Orleans.Streams;
 
 namespace Poc;
 
-/// <summary>Prod values scaled down so one scenario takes well under a minute.</summary>
+/// <summary>Short timings so one scenario takes well under a minute.</summary>
 public static class Timings
 {
-    public static readonly TimeSpan DataMinTimeInCache = TimeSpan.FromSeconds(1);      // prod 10 s
-    public static readonly TimeSpan DataMaxAgeInCache = TimeSpan.FromSeconds(3);       // prod 30 s
-    public static readonly TimeSpan MetadataMinTimeInCache = TimeSpan.FromSeconds(5);  // prod 10 min (default, not overridden)
+    public static readonly TimeSpan DataMinTimeInCache = TimeSpan.FromSeconds(1);      // default 5 min
+    public static readonly TimeSpan DataMaxAgeInCache = TimeSpan.FromSeconds(3);       // default 30 min
+    public static readonly TimeSpan MetadataMinTimeInCache = TimeSpan.FromSeconds(5);  // default 10 min
 
     // Cache-size variants: "mid" is still shorter than every quiet period, "big" is longer than all of them.
     public static readonly TimeSpan MidDataMaxAgeInCache = TimeSpan.FromSeconds(6);
     public static readonly TimeSpan BigDataMaxAgeInCache = TimeSpan.FromSeconds(40);
     public static readonly TimeSpan BigMetadataMinTimeInCache = TimeSpan.FromSeconds(40);
     public static readonly TimeSpan StatisticMonitorWriteInterval = TimeSpan.FromSeconds(1); // default 5 min
-    public static readonly TimeSpan StreamInactivityPeriod = TimeSpan.FromSeconds(20); // prod 30 min (default)
-    public static readonly TimeSpan CollectionAge = TimeSpan.FromSeconds(10);          // prod 15 min (default)
-    public static readonly TimeSpan CollectionQuantum = TimeSpan.FromSeconds(2);       // prod 1 min (default)
-    public static readonly TimeSpan PingInterval = TimeSpan.FromSeconds(3);            // prod: discovery GetConfig every 5 min
-    public static readonly TimeSpan FillerInterval = TimeSpan.FromMilliseconds(500);   // prod: other entities on the partition
+    public static readonly TimeSpan StreamInactivityPeriod = TimeSpan.FromSeconds(20); // default 30 min
+    public static readonly TimeSpan CollectionAge = TimeSpan.FromSeconds(10);          // default 15 min
+    public static readonly TimeSpan CollectionQuantum = TimeSpan.FromSeconds(2);       // default 1 min
+    public static readonly TimeSpan PingInterval = TimeSpan.FromSeconds(3);            // shorter than CollectionAge, so pinged grains stay active
+    public static readonly TimeSpan FillerInterval = TimeSpan.FromMilliseconds(500);   // other streams on the same partition
     public static readonly TimeSpan CheckpointPersistInterval = TimeSpan.FromSeconds(1);
 
     // No event on S for longer than StreamInactivityPeriod + cleanup cadence (StreamInactivityPeriod / 10).
@@ -78,6 +78,8 @@ public static class SiloHost
         builder.Logging.ClearProviders();
         builder.Logging.SetMinimumLevel(LogLevel.Information);
         builder.Logging.AddFilter(TimelineLoggerProvider.PullingAgentCategory, LogLevel.Debug);
+        // Keeps the local checkout path ("Content root path: ...") out of results/logs.
+        builder.Logging.AddFilter("Microsoft.Hosting.Lifetime", LogLevel.Warning);
         builder.Logging.AddProvider(new TimelineLoggerProvider(timeline, logFile));
         builder.Services.AddSingleton(timeline);
 
@@ -97,7 +99,7 @@ public static class SiloHost
                     silo.AddMemoryStreams(Names.Provider, c =>
                     {
                         c.ConfigurePartitioning(1);
-                        ConfigureLikeProd(c, dataMaxAgeInCache, metadataMinTimeInCache);
+                        ConfigureStreams(c, dataMaxAgeInCache, metadataMinTimeInCache);
                     });
                     break;
                 case "eventhub":
@@ -114,7 +116,7 @@ public static class SiloHost
                             o.TableName = EventHubEmulator.CheckpointTable;
                             o.PersistInterval = Timings.CheckpointPersistInterval;
                         }));
-                        ConfigureLikeProd(c, dataMaxAgeInCache, metadataMinTimeInCache);
+                        ConfigureStreams(c, dataMaxAgeInCache, metadataMinTimeInCache);
                     });
                     break;
                 default:
@@ -125,8 +127,7 @@ public static class SiloHost
         return builder.Build();
     }
 
-    // Same knobs as Monitor.HealthIntelligence.Insights.Silo/Program.cs L223-243, plus scaled values for the defaults prod relies on.
-    private static void ConfigureLikeProd(ISiloRecoverableStreamConfigurator c, TimeSpan dataMaxAgeInCache, TimeSpan metadataMinTimeInCache)
+    private static void ConfigureStreams(ISiloRecoverableStreamConfigurator c, TimeSpan dataMaxAgeInCache, TimeSpan metadataMinTimeInCache)
     {
         c.ConfigureCacheEviction(ob => ob.Configure(o =>
         {

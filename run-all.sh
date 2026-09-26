@@ -15,10 +15,10 @@ if [[ " $TRANSPORTS " == *" eventhub "* ]]; then
   docker compose up -d
   echo "waiting for the Event Hubs emulator..."
   for _ in $(seq 1 60); do
-    docker logs poc4006-eventhubs-emulator 2>&1 | grep -q "Emulator Service is Successfully Up" && break
+    docker logs osl-eventhubs-emulator 2>&1 | grep -q "Emulator Service is Successfully Up" && break
     sleep 3
   done
-  docker logs poc4006-eventhubs-emulator 2>&1 | grep -q "Emulator Service is Successfully Up" || { echo "emulator did not start"; exit 1; }
+  docker logs osl-eventhubs-emulator 2>&1 | grep -q "Emulator Service is Successfully Up" || { echo "emulator did not start"; exit 1; }
 fi
 
 mkdir -p results

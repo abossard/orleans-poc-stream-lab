@@ -259,7 +259,7 @@ public sealed class Lane : IHostedService
         host.Dispose();
     }
 
-    // Like prod discovery calling GetConfig(): published grains stay active, so they keep their expectedToken.
+    // A periodic read (Ping) keeps published grains active, so they keep their expectedToken.
     private async Task KeepAlive(IClusterClient client, CancellationToken ct)
     {
         try
