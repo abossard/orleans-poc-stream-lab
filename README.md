@@ -1,6 +1,6 @@
 # Orleans #4006 PoC: stale `StreamSequenceToken` after a stream goes quiet
 
-Minimal Orleans app that reproduces the `QueueCacheMissException` errors behind [Azure/ahm-planning#4006](https://github.com/Azure/ahm-planning/issues/4006) and shows how Orleans 10.3.1 changes them. The same code runs against Orleans **10.2.1** and **10.3.1**, on **memory streams** and on the **Azure Event Hubs emulator**.
+Minimal Orleans app that reproduces the `QueueCacheMissException` errors behind [Azure/ahm-planning#4006](https://github.com/Azure/ahm-planning/issues/4006) and shows how Orleans 10.3.1 changes them. The same code runs against Orleans **10.2.1** and **10.3.1**, on **memory streams** and on the **Azure Event Hubs emulator**, from a CLI (`run-all.sh`) or from a [live web UI](#learn-orleans-streams-with-the-live-ui) that runs both versions side by side.
 
 Terms: a `StreamSequenceToken` is a stream position. For Event Hub it is an `EventHubSequenceToken` (offset, sequence number, event index), and sequence numbers count events per **partition**. After a delivery the subscription handle keeps the token as `expectedToken` (a `StreamHandshakeToken`) and returns it from `GetSequenceToken()` during a handshake. `cacheToken` is the token of the event that made the pulling agent register the stream again. S is the consumer grain's own stream.
 
