@@ -1,0 +1,866 @@
+{
+  "OrleansVersion": "10.2.1",
+  "Assemblies": {
+    "Orleans.Core.Abstractions": "10.2.1",
+    "Orleans.Streaming": "10.2.1",
+    "Orleans.Streaming.EventHubs": "10.2.1"
+  },
+  "Transport": "eventhub",
+  "StartedUtc": "2026-09-26T08:17:28.724014Z",
+  "Timings": {
+    "DataMinTimeInCache": 1,
+    "DataMaxAgeInCache": 3,
+    "MetadataMinTimeInCache": 5,
+    "StreamInactivityPeriod": 20,
+    "CollectionAge": 10,
+    "CollectionQuantum": 2,
+    "PingInterval": 3,
+    "FillerInterval": 0.5,
+    "QuietPeriod": 26,
+    "WarmQuietPeriod": 12,
+    "CheckpointPersistInterval": 1,
+    "Partitions": 1
+  },
+  "Scenarios": [
+    {
+      "Id": "A",
+      "Title": "Grain kept alive by Ping, agent forgets S, S\u0027s token and its purge metadata are evicted (prod #4006 case)",
+      "Expected": "1 x OnErrorAsync(QueueCacheMissException) at the handshake, then OnNextAsync(2); nothing lost; 1 activation",
+      "Observed": "1 x OnErrorAsync(QueueCacheMissException); delivered [1,2]; lost []; 1 activation(s)",
+      "Pass": true,
+      "OnErrorCount": 1,
+      "ErrorTypes": [
+        "QueueCacheMissException"
+      ],
+      "Published": [
+        1,
+        2
+      ],
+      "Delivered": [
+        1,
+        2
+      ],
+      "Lost": [],
+      "Activations": 1,
+      "Timeline": [
+        {
+          "T": 0.001,
+          "Source": "driver",
+          "Grain": "",
+          "Kind": "Fillers",
+          "Detail": "start: 1 event every 500 ms on filler/a0660f (same partition, no consumer)",
+          "Version": null
+        },
+        {
+          "T": 0.001,
+          "Source": "driver",
+          "Grain": "a-a0660f",
+          "Kind": "Step",
+          "Detail": "S = entity-update/a-a0660f, MetadataMinTimeInCache = 5s",
+          "Version": null
+        },
+        {
+          "T": 0.002,
+          "Source": "driver",
+          "Grain": "a-a0660f",
+          "Kind": "Step",
+          "Detail": "publish event 1 on S via grain.Update(1)",
+          "Version": null
+        },
+        {
+          "T": 0.003,
+          "Source": "grain",
+          "Grain": "a-a0660f",
+          "Kind": "Activated",
+          "Detail": "",
+          "Version": null
+        },
+        {
+          "T": 0.014,
+          "Source": "grain",
+          "Grain": "a-a0660f",
+          "Kind": "Published",
+          "Detail": "",
+          "Version": 1
+        },
+        {
+          "T": 0.034,
+          "Source": "agent",
+          "Grain": "",
+          "Kind": "AgentLog",
+          "Detail": "Got back 1 subscribers for stream poc/entity-update/a-a0660f.",
+          "Version": null
+        },
+        {
+          "T": 0.034,
+          "Source": "agent-\u003Egrain",
+          "Grain": "a-a0660f",
+          "Kind": "GetSequenceToken",
+          "Detail": "returned null (no expectedToken)",
+          "Version": null
+        },
+        {
+          "T": 0.035,
+          "Source": "grain",
+          "Grain": "a-a0660f",
+          "Kind": "OnSubscribed",
+          "Detail": "",
+          "Version": null
+        },
+        {
+          "T": 0.035,
+          "Source": "grain",
+          "Grain": "a-a0660f",
+          "Kind": "OnNextAsync",
+          "Detail": "token=EventHubSequenceToken(EventHubOffset: 31984, SequenceNumber: 187, EventIndex: 0)",
+          "Version": 1
+        },
+        {
+          "T": 0.118,
+          "Source": "driver",
+          "Grain": "a-a0660f",
+          "Kind": "Step",
+          "Detail": "quiet period 26s: no events on S, fillers keep the partition moving, Ping=every 3s",
+          "Version": null
+        },
+        {
+          "T": 11.405,
+          "Source": "grain",
+          "Grain": "warmup-a0660f",
+          "Kind": "Deactivated",
+          "Detail": "ActivationIdle",
+          "Version": null
+        },
+        {
+          "T": 26.12,
+          "Source": "driver",
+          "Grain": "a-a0660f",
+          "Kind": "Step",
+          "Detail": "publish event 2 on S via grain.Update(2)",
+          "Version": null
+        },
+        {
+          "T": 26.141,
+          "Source": "grain",
+          "Grain": "a-a0660f",
+          "Kind": "Published",
+          "Detail": "",
+          "Version": 2
+        },
+        {
+          "T": 26.157,
+          "Source": "agent",
+          "Grain": "",
+          "Kind": "AgentLog",
+          "Detail": "Got back 1 subscribers for stream poc/entity-update/a-a0660f.",
+          "Version": null
+        },
+        {
+          "T": 26.16,
+          "Source": "agent-\u003Egrain",
+          "Grain": "a-a0660f",
+          "Kind": "GetSequenceToken",
+          "Detail": "returned DeliveryToken(EventHubSequenceToken(EventHubOffset: 31984, SequenceNumber: 187, EventIndex: 0))",
+          "Version": null
+        },
+        {
+          "T": 26.165,
+          "Source": "grain",
+          "Grain": "a-a0660f",
+          "Kind": "OnErrorAsync",
+          "Detail": "Orleans.Streams.QueueCacheMissException: Item not found in cache.  Requested: EventHubSequenceToken(EventHubOffset: 31984, SequenceNumber: 187, EventIndex: 0), Low: EventHubSequenceToken(EventHubOffset: , SequenceNumber: 232, EventIndex: 0), High: EventHubSequenceToken(EventHubOffset: , SequenceNumber: 238, EventIndex: 0)",
+          "Version": null
+        },
+        {
+          "T": 26.166,
+          "Source": "grain",
+          "Grain": "a-a0660f",
+          "Kind": "OnNextAsync",
+          "Detail": "token=EventHubSequenceToken(EventHubOffset: 40968, SequenceNumber: 238, EventIndex: 0)",
+          "Version": 2
+        },
+        {
+          "T": 29.245,
+          "Source": "driver",
+          "Grain": "a-a0660f",
+          "Kind": "Step",
+          "Detail": "pinged 9 times",
+          "Version": null
+        },
+        {
+          "T": 29.249,
+          "Source": "driver",
+          "Grain": "",
+          "Kind": "Fillers",
+          "Detail": "stopped after 57 events",
+          "Version": null
+        }
+      ]
+    },
+    {
+      "Id": "B",
+      "Title": "Control: as A, but the grain is idle-collected (no Ping), so the new activation has no expectedToken",
+      "Expected": "no OnErrorAsync (GetSequenceToken returns null), OnNextAsync(2); nothing lost; 2 activations",
+      "Observed": "0 x OnErrorAsync; delivered [1,2]; lost []; 2 activation(s)",
+      "Pass": true,
+      "OnErrorCount": 0,
+      "ErrorTypes": [],
+      "Published": [
+        1,
+        2
+      ],
+      "Delivered": [
+        1,
+        2
+      ],
+      "Lost": [],
+      "Activations": 2,
+      "Timeline": [
+        {
+          "T": 0.001,
+          "Source": "driver",
+          "Grain": "",
+          "Kind": "Fillers",
+          "Detail": "start: 1 event every 500 ms on filler/78860c (same partition, no consumer)",
+          "Version": null
+        },
+        {
+          "T": 0.001,
+          "Source": "driver",
+          "Grain": "b-78860c",
+          "Kind": "Step",
+          "Detail": "S = entity-update/b-78860c, MetadataMinTimeInCache = 5s",
+          "Version": null
+        },
+        {
+          "T": 0.001,
+          "Source": "driver",
+          "Grain": "b-78860c",
+          "Kind": "Step",
+          "Detail": "publish event 1 on S via grain.Update(1)",
+          "Version": null
+        },
+        {
+          "T": 0.002,
+          "Source": "grain",
+          "Grain": "b-78860c",
+          "Kind": "Activated",
+          "Detail": "",
+          "Version": null
+        },
+        {
+          "T": 0.008,
+          "Source": "grain",
+          "Grain": "b-78860c",
+          "Kind": "Published",
+          "Detail": "",
+          "Version": 1
+        },
+        {
+          "T": 0.028,
+          "Source": "agent",
+          "Grain": "",
+          "Kind": "AgentLog",
+          "Detail": "Got back 1 subscribers for stream poc/entity-update/b-78860c.",
+          "Version": null
+        },
+        {
+          "T": 0.029,
+          "Source": "agent-\u003Egrain",
+          "Grain": "b-78860c",
+          "Kind": "GetSequenceToken",
+          "Detail": "returned null (no expectedToken)",
+          "Version": null
+        },
+        {
+          "T": 0.029,
+          "Source": "grain",
+          "Grain": "b-78860c",
+          "Kind": "OnSubscribed",
+          "Detail": "",
+          "Version": null
+        },
+        {
+          "T": 0.029,
+          "Source": "grain",
+          "Grain": "b-78860c",
+          "Kind": "OnNextAsync",
+          "Detail": "token=EventHubSequenceToken(EventHubOffset: 42568, SequenceNumber: 247, EventIndex: 0)",
+          "Version": 1
+        },
+        {
+          "T": 0.111,
+          "Source": "driver",
+          "Grain": "b-78860c",
+          "Kind": "Step",
+          "Detail": "quiet period 26s: no events on S, fillers keep the partition moving, Ping=off",
+          "Version": null
+        },
+        {
+          "T": 11.822,
+          "Source": "grain",
+          "Grain": "warmup-78860c",
+          "Kind": "Deactivated",
+          "Detail": "ActivationIdle",
+          "Version": null
+        },
+        {
+          "T": 11.822,
+          "Source": "grain",
+          "Grain": "b-78860c",
+          "Kind": "Deactivated",
+          "Detail": "ActivationIdle",
+          "Version": null
+        },
+        {
+          "T": 26.113,
+          "Source": "driver",
+          "Grain": "b-78860c",
+          "Kind": "Step",
+          "Detail": "publish event 2 on S via grain.Update(2)",
+          "Version": null
+        },
+        {
+          "T": 26.113,
+          "Source": "grain",
+          "Grain": "b-78860c",
+          "Kind": "Activated",
+          "Detail": "",
+          "Version": null
+        },
+        {
+          "T": 26.122,
+          "Source": "grain",
+          "Grain": "b-78860c",
+          "Kind": "Published",
+          "Detail": "",
+          "Version": 2
+        },
+        {
+          "T": 26.144,
+          "Source": "agent",
+          "Grain": "",
+          "Kind": "AgentLog",
+          "Detail": "Got back 1 subscribers for stream poc/entity-update/b-78860c.",
+          "Version": null
+        },
+        {
+          "T": 26.144,
+          "Source": "agent-\u003Egrain",
+          "Grain": "b-78860c",
+          "Kind": "GetSequenceToken",
+          "Detail": "returned null (no expectedToken)",
+          "Version": null
+        },
+        {
+          "T": 26.144,
+          "Source": "grain",
+          "Grain": "b-78860c",
+          "Kind": "OnSubscribed",
+          "Detail": "",
+          "Version": null
+        },
+        {
+          "T": 26.144,
+          "Source": "grain",
+          "Grain": "b-78860c",
+          "Kind": "OnNextAsync",
+          "Detail": "token=EventHubSequenceToken(EventHubOffset: 51552, SequenceNumber: 298, EventIndex: 0)",
+          "Version": 2
+        },
+        {
+          "T": 29.226,
+          "Source": "driver",
+          "Grain": "",
+          "Kind": "Fillers",
+          "Detail": "stopped after 57 events",
+          "Version": null
+        }
+      ]
+    },
+    {
+      "Id": "C",
+      "Title": "Genuine mid-stream miss: slow consumer while the partition moves on",
+      "Expected": "OnErrorAsync(QueueCacheMissException) on both versions and events skipped",
+      "Observed": "2 x OnErrorAsync(QueueCacheMissException, QueueCacheMissException); delivered [1]; lost [2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21]; 1 activation(s)",
+      "Pass": true,
+      "OnErrorCount": 2,
+      "ErrorTypes": [
+        "QueueCacheMissException",
+        "QueueCacheMissException"
+      ],
+      "Published": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20,
+        21
+      ],
+      "Delivered": [
+        1
+      ],
+      "Lost": [
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20,
+        21
+      ],
+      "Activations": 1,
+      "Timeline": [
+        {
+          "T": 0,
+          "Source": "driver",
+          "Grain": "",
+          "Kind": "Fillers",
+          "Detail": "start: 1 event every 500 ms on filler/4d016d (same partition, no consumer)",
+          "Version": null
+        },
+        {
+          "T": 0,
+          "Source": "driver",
+          "Grain": "c-4d016d",
+          "Kind": "Step",
+          "Detail": "S = entity-update/c-4d016d, MetadataMinTimeInCache = 5s",
+          "Version": null
+        },
+        {
+          "T": 0.001,
+          "Source": "driver",
+          "Grain": "c-4d016d",
+          "Kind": "Step",
+          "Detail": "publish events 1..20 on S; event 1 takes 6s to process",
+          "Version": null
+        },
+        {
+          "T": 0.036,
+          "Source": "agent",
+          "Grain": "",
+          "Kind": "AgentLog",
+          "Detail": "Got back 1 subscribers for stream poc/entity-update/c-4d016d.",
+          "Version": null
+        },
+        {
+          "T": 0.037,
+          "Source": "grain",
+          "Grain": "c-4d016d",
+          "Kind": "Activated",
+          "Detail": "",
+          "Version": null
+        },
+        {
+          "T": 0.037,
+          "Source": "agent-\u003Egrain",
+          "Grain": "c-4d016d",
+          "Kind": "GetSequenceToken",
+          "Detail": "returned null (no expectedToken)",
+          "Version": null
+        },
+        {
+          "T": 0.037,
+          "Source": "grain",
+          "Grain": "c-4d016d",
+          "Kind": "OnSubscribed",
+          "Detail": "",
+          "Version": null
+        },
+        {
+          "T": 0.037,
+          "Source": "grain",
+          "Grain": "c-4d016d",
+          "Kind": "OnNextAsync",
+          "Detail": "token=EventHubSequenceToken(EventHubOffset: 53152, SequenceNumber: 307, EventIndex: 0)",
+          "Version": 1
+        },
+        {
+          "T": 6.049,
+          "Source": "grain",
+          "Grain": "c-4d016d",
+          "Kind": "OnErrorAsync",
+          "Detail": "Orleans.Streams.QueueCacheMissException: Item not found in cache.  Requested: EventHubSequenceToken(EventHubOffset: , SequenceNumber: 308, EventIndex: 0), Low: EventHubSequenceToken(EventHubOffset: , SequenceNumber: 332, EventIndex: 0), High: EventHubSequenceToken(EventHubOffset: , SequenceNumber: 337, EventIndex: 0)",
+          "Version": null
+        },
+        {
+          "T": 10.084,
+          "Source": "driver",
+          "Grain": "c-4d016d",
+          "Kind": "Step",
+          "Detail": "publish event 21 on S (after the slow period)",
+          "Version": null
+        },
+        {
+          "T": 10.121,
+          "Source": "grain",
+          "Grain": "c-4d016d",
+          "Kind": "OnErrorAsync",
+          "Detail": "Orleans.Streams.QueueCacheMissException: Item not found in cache.  Requested: EventHubSequenceToken(EventHubOffset: , SequenceNumber: 337, EventIndex: 0), Low: EventHubSequenceToken(EventHubOffset: , SequenceNumber: 340, EventIndex: 0), High: EventHubSequenceToken(EventHubOffset: , SequenceNumber: 346, EventIndex: 0)",
+          "Version": null
+        },
+        {
+          "T": 11.837,
+          "Source": "grain",
+          "Grain": "warmup-4d016d",
+          "Kind": "Deactivated",
+          "Detail": "ActivationIdle",
+          "Version": null
+        },
+        {
+          "T": 23.133,
+          "Source": "driver",
+          "Grain": "",
+          "Kind": "Fillers",
+          "Detail": "stopped after 45 events",
+          "Version": null
+        }
+      ]
+    },
+    {
+      "Id": "D",
+      "Title": "Control: as A, but the cache still remembers S\u0027s last purged token (MetadataMinTimeInCache at its 10 min default)",
+      "Expected": "no OnErrorAsync (cache resumes at its oldest message), OnNextAsync(2); nothing lost; 1 activation",
+      "Observed": "0 x OnErrorAsync; delivered [1,2]; lost []; 1 activation(s)",
+      "Pass": true,
+      "OnErrorCount": 0,
+      "ErrorTypes": [],
+      "Published": [
+        1,
+        2
+      ],
+      "Delivered": [
+        1,
+        2
+      ],
+      "Lost": [],
+      "Activations": 1,
+      "Timeline": [
+        {
+          "T": 0.004,
+          "Source": "driver",
+          "Grain": "",
+          "Kind": "Fillers",
+          "Detail": "start: 1 event every 500 ms on filler/ec2213 (same partition, no consumer)",
+          "Version": null
+        },
+        {
+          "T": 0.005,
+          "Source": "driver",
+          "Grain": "d-ec2213",
+          "Kind": "Step",
+          "Detail": "S = entity-update/d-ec2213, MetadataMinTimeInCache = 600s",
+          "Version": null
+        },
+        {
+          "T": 0.005,
+          "Source": "driver",
+          "Grain": "d-ec2213",
+          "Kind": "Step",
+          "Detail": "publish event 1 on S via grain.Update(1)",
+          "Version": null
+        },
+        {
+          "T": 0.006,
+          "Source": "grain",
+          "Grain": "d-ec2213",
+          "Kind": "Activated",
+          "Detail": "",
+          "Version": null
+        },
+        {
+          "T": 0.019,
+          "Source": "grain",
+          "Grain": "d-ec2213",
+          "Kind": "Published",
+          "Detail": "",
+          "Version": 1
+        },
+        {
+          "T": 0.037,
+          "Source": "agent",
+          "Grain": "",
+          "Kind": "AgentLog",
+          "Detail": "Got back 1 subscribers for stream poc/entity-update/d-ec2213.",
+          "Version": null
+        },
+        {
+          "T": 0.037,
+          "Source": "agent-\u003Egrain",
+          "Grain": "d-ec2213",
+          "Kind": "GetSequenceToken",
+          "Detail": "returned null (no expectedToken)",
+          "Version": null
+        },
+        {
+          "T": 0.037,
+          "Source": "grain",
+          "Grain": "d-ec2213",
+          "Kind": "OnSubscribed",
+          "Detail": "",
+          "Version": null
+        },
+        {
+          "T": 0.037,
+          "Source": "grain",
+          "Grain": "d-ec2213",
+          "Kind": "OnNextAsync",
+          "Detail": "token=EventHubSequenceToken(EventHubOffset: 65304, SequenceNumber: 375, EventIndex: 0)",
+          "Version": 1
+        },
+        {
+          "T": 0.12,
+          "Source": "driver",
+          "Grain": "d-ec2213",
+          "Kind": "Step",
+          "Detail": "quiet period 26s: no events on S, fillers keep the partition moving, Ping=every 3s",
+          "Version": null
+        },
+        {
+          "T": 20.768,
+          "Source": "grain",
+          "Grain": "warmup-ec2213",
+          "Kind": "Deactivated",
+          "Detail": "ActivationIdle",
+          "Version": null
+        },
+        {
+          "T": 26.122,
+          "Source": "driver",
+          "Grain": "d-ec2213",
+          "Kind": "Step",
+          "Detail": "publish event 2 on S via grain.Update(2)",
+          "Version": null
+        },
+        {
+          "T": 26.135,
+          "Source": "grain",
+          "Grain": "d-ec2213",
+          "Kind": "Published",
+          "Detail": "",
+          "Version": 2
+        },
+        {
+          "T": 26.16,
+          "Source": "agent",
+          "Grain": "",
+          "Kind": "AgentLog",
+          "Detail": "Got back 1 subscribers for stream poc/entity-update/d-ec2213.",
+          "Version": null
+        },
+        {
+          "T": 26.167,
+          "Source": "agent-\u003Egrain",
+          "Grain": "d-ec2213",
+          "Kind": "GetSequenceToken",
+          "Detail": "returned DeliveryToken(EventHubSequenceToken(EventHubOffset: 65304, SequenceNumber: 375, EventIndex: 0))",
+          "Version": null
+        },
+        {
+          "T": 26.167,
+          "Source": "grain",
+          "Grain": "d-ec2213",
+          "Kind": "OnNextAsync",
+          "Detail": "token=EventHubSequenceToken(EventHubOffset: 74288, SequenceNumber: 426, EventIndex: 0)",
+          "Version": 2
+        },
+        {
+          "T": 29.238,
+          "Source": "driver",
+          "Grain": "d-ec2213",
+          "Kind": "Step",
+          "Detail": "pinged 9 times",
+          "Version": null
+        },
+        {
+          "T": 29.238,
+          "Source": "driver",
+          "Grain": "",
+          "Kind": "Fillers",
+          "Detail": "stopped after 57 events",
+          "Version": null
+        }
+      ]
+    },
+    {
+      "Id": "E",
+      "Title": "Warm stream: as A, but event 2 comes while the agent still has S registered (quiet longer than MetadataMinTimeInCache, shorter than StreamInactivityPeriod)",
+      "Expected": "1 x OnErrorAsync(QueueCacheMissException) from the idle cursor, event 2 skipped; 1 activation",
+      "Observed": "1 x OnErrorAsync(QueueCacheMissException); delivered [1]; lost [2]; 1 activation(s)",
+      "Pass": true,
+      "OnErrorCount": 1,
+      "ErrorTypes": [
+        "QueueCacheMissException"
+      ],
+      "Published": [
+        1,
+        2
+      ],
+      "Delivered": [
+        1
+      ],
+      "Lost": [
+        2
+      ],
+      "Activations": 1,
+      "Timeline": [
+        {
+          "T": 0,
+          "Source": "driver",
+          "Grain": "",
+          "Kind": "Fillers",
+          "Detail": "start: 1 event every 500 ms on filler/e5aba8 (same partition, no consumer)",
+          "Version": null
+        },
+        {
+          "T": 0,
+          "Source": "driver",
+          "Grain": "e-e5aba8",
+          "Kind": "Step",
+          "Detail": "S = entity-update/e-e5aba8, MetadataMinTimeInCache = 5s",
+          "Version": null
+        },
+        {
+          "T": 0,
+          "Source": "driver",
+          "Grain": "e-e5aba8",
+          "Kind": "Step",
+          "Detail": "publish event 1 on S via grain.Update(1)",
+          "Version": null
+        },
+        {
+          "T": 0.001,
+          "Source": "grain",
+          "Grain": "e-e5aba8",
+          "Kind": "Activated",
+          "Detail": "",
+          "Version": null
+        },
+        {
+          "T": 0.021,
+          "Source": "grain",
+          "Grain": "e-e5aba8",
+          "Kind": "Published",
+          "Detail": "",
+          "Version": 1
+        },
+        {
+          "T": 0.038,
+          "Source": "agent",
+          "Grain": "",
+          "Kind": "AgentLog",
+          "Detail": "Got back 1 subscribers for stream poc/entity-update/e-e5aba8.",
+          "Version": null
+        },
+        {
+          "T": 0.039,
+          "Source": "agent-\u003Egrain",
+          "Grain": "e-e5aba8",
+          "Kind": "GetSequenceToken",
+          "Detail": "returned null (no expectedToken)",
+          "Version": null
+        },
+        {
+          "T": 0.039,
+          "Source": "grain",
+          "Grain": "e-e5aba8",
+          "Kind": "OnSubscribed",
+          "Detail": "",
+          "Version": null
+        },
+        {
+          "T": 0.039,
+          "Source": "grain",
+          "Grain": "e-e5aba8",
+          "Kind": "OnNextAsync",
+          "Detail": "token=EventHubSequenceToken(EventHubOffset: 76072, SequenceNumber: 436, EventIndex: 0)",
+          "Version": 1
+        },
+        {
+          "T": 0.121,
+          "Source": "driver",
+          "Grain": "e-e5aba8",
+          "Kind": "Step",
+          "Detail": "quiet period 12s: no events on S, fillers keep the partition moving, Ping=every 3s",
+          "Version": null
+        },
+        {
+          "T": 12.123,
+          "Source": "driver",
+          "Grain": "e-e5aba8",
+          "Kind": "Step",
+          "Detail": "publish event 2 on S via grain.Update(2)",
+          "Version": null
+        },
+        {
+          "T": 12.132,
+          "Source": "grain",
+          "Grain": "e-e5aba8",
+          "Kind": "Published",
+          "Detail": "",
+          "Version": 2
+        },
+        {
+          "T": 12.154,
+          "Source": "grain",
+          "Grain": "e-e5aba8",
+          "Kind": "OnErrorAsync",
+          "Detail": "Orleans.Streams.QueueCacheMissException: Item not found in cache.  Requested: EventHubSequenceToken(EventHubOffset: , SequenceNumber: 436, EventIndex: 0), Low: EventHubSequenceToken(EventHubOffset: , SequenceNumber: 454, EventIndex: 0), High: EventHubSequenceToken(EventHubOffset: , SequenceNumber: 460, EventIndex: 0)",
+          "Version": null
+        },
+        {
+          "T": 20.739,
+          "Source": "grain",
+          "Grain": "warmup-e5aba8",
+          "Kind": "Deactivated",
+          "Detail": "ActivationIdle",
+          "Version": null
+        },
+        {
+          "T": 45.172,
+          "Source": "driver",
+          "Grain": "e-e5aba8",
+          "Kind": "Step",
+          "Detail": "pinged 14 times",
+          "Version": null
+        },
+        {
+          "T": 45.172,
+          "Source": "driver",
+          "Grain": "",
+          "Kind": "Fillers",
+          "Detail": "stopped after 88 events",
+          "Version": null
+        }
+      ]
+    }
+  ]
+}

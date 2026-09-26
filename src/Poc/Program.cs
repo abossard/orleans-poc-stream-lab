@@ -13,7 +13,7 @@ if (options.ContainsKey("summary"))
 }
 
 var transport = options.GetValueOrDefault("transport", "memory");
-var scenarioIds = options.GetValueOrDefault("scenarios", "A,B,C,D").Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+var scenarioIds = options.GetValueOrDefault("scenarios", "A,B,C,D,E").Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
 
 var assemblies = new[] { typeof(IGrain).Assembly, typeof(StreamPullingAgentOptions).Assembly, typeof(EventHubOptions).Assembly }
     .ToDictionary(a => a.GetName().Name!, InformationalVersion);

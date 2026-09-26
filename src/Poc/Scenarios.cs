@@ -26,10 +26,14 @@ public sealed class Scenarios(string transport, Version orleansVersion, string l
         ["B"] = "Control: as A, but the grain is idle-collected (no Ping), so the new activation has no expectedToken",
         ["C"] = "Genuine mid-stream miss: slow consumer while the partition moves on",
         ["D"] = "Control: as A, but the cache still remembers S's last purged token (MetadataMinTimeInCache at its 10 min default)",
+        ["E"] = "Warm stream: as A, but event 2 comes while the agent still has S registered (quiet longer than MetadataMinTimeInCache, shorter than StreamInactivityPeriod)",
     };
 
     // Orleans 10.3.0 added the catch (QueueCacheMissException) when (cacheToken is not null) fallback.
     private bool HandshakeReportsMiss => orleansVersion < new Version(10, 3, 0);
+
+    // 10.3.x wires the Event Hub cursor's Refresh to PooledQueueCache.Refresh; the memory cursor's Refresh is a no-op in both versions.
+    private bool IdleCursorRefreshes => transport == "eventhub" && !HandshakeReportsMiss;
 
     public async Task<ScenarioResult> Run(string id, int portOffset)
     {
@@ -53,8 +57,9 @@ public sealed class Scenarios(string transport, Version orleansVersion, string l
             Step(timeline, key, $"S = {Names.ConsumerNamespace}/{key}, MetadataMinTimeInCache = {metadataMinTimeInCache.TotalSeconds}s");
             var result = id switch
             {
-                "A" or "D" => await Handshake(client, timeline, key, id, keepAlive: true),
-                "B" => await Handshake(client, timeline, key, id, keepAlive: false),
+                "A" or "D" => await QuietStream(client, timeline, key, id, keepAlive: true, Timings.QuietPeriod),
+                "B" => await QuietStream(client, timeline, key, id, keepAlive: false, Timings.QuietPeriod),
+                "E" => await QuietStream(client, timeline, key, id, keepAlive: true, Timings.WarmQuietPeriod),
                 "C" => await SlowConsumer(client, timeline, key),
                 _ => throw new ArgumentException($"Unknown scenario '{id}'"),
             };
@@ -86,7 +91,7 @@ public sealed class Scenarios(string transport, Version orleansVersion, string l
         throw new TimeoutException("Warm-up event was never delivered; is the stream provider reading?");
     }
 
-    private async Task<ScenarioResult> Handshake(IClusterClient client, Timeline timeline, string key, string id, bool keepAlive)
+    private async Task<ScenarioResult> QuietStream(IClusterClient client, Timeline timeline, string key, string id, bool keepAlive, TimeSpan quiet)
     {
         var grain = client.GetGrain<IConsumerGrain>(key);
 
@@ -96,8 +101,8 @@ public sealed class Scenarios(string transport, Version orleansVersion, string l
 
         using var pingCts = new CancellationTokenSource();
         var pinger = keepAlive ? RunPinger(grain, pingCts.Token) : Task.FromResult(0);
-        Step(timeline, key, $"quiet period {Timings.QuietPeriod.TotalSeconds}s: no events on S, fillers keep the partition moving, Ping={(keepAlive ? $"every {Timings.PingInterval.TotalSeconds}s" : "off")}");
-        await Task.Delay(Timings.QuietPeriod);
+        Step(timeline, key, $"quiet period {quiet.TotalSeconds}s: no events on S, fillers keep the partition moving, Ping={(keepAlive ? $"every {Timings.PingInterval.TotalSeconds}s" : "off")}");
+        await Task.Delay(quiet);
 
         Step(timeline, key, "publish event 2 on S via grain.Update(2)");
         await grain.Update(2);
@@ -112,18 +117,21 @@ public sealed class Scenarios(string transport, Version orleansVersion, string l
         }
 
         var r = Evaluate(timeline, key, published: [1, 2]);
-        var expectMiss = id == "A" && HandshakeReportsMiss;
+        var expectHandshakeMiss = id == "A" && HandshakeReportsMiss;
+        var expectWarmLoss = id == "E" && !IdleCursorRefreshes;
         var expectedActivations = keepAlive ? 1 : 2;
-        var pass = r.OnErrorCount == (expectMiss ? 1 : 0)
+        var pass = r.OnErrorCount == (expectHandshakeMiss || expectWarmLoss ? 1 : 0)
                    && r.ErrorTypes.All(t => t == nameof(QueueCacheMissException))
-                   && r.Lost.Length == 0
+                   && r.Lost.SequenceEqual(expectWarmLoss ? [2] : Array.Empty<int>())
                    && r.Activations == expectedActivations;
         var expected = id switch
         {
-            "A" when expectMiss => "1 x OnErrorAsync(QueueCacheMissException) at the handshake, then OnNextAsync(2); nothing lost; 1 activation",
+            "A" when expectHandshakeMiss => "1 x OnErrorAsync(QueueCacheMissException) at the handshake, then OnNextAsync(2); nothing lost; 1 activation",
             "A" => "no OnErrorAsync (miss caught, cursor at cacheToken), OnNextAsync(2); nothing lost; 1 activation",
             "B" => "no OnErrorAsync (GetSequenceToken returns null), OnNextAsync(2); nothing lost; 2 activations",
-            _ => "no OnErrorAsync (cache resumes at its oldest message), OnNextAsync(2); nothing lost; 1 activation",
+            "D" => "no OnErrorAsync (cache resumes at its oldest message), OnNextAsync(2); nothing lost; 1 activation",
+            _ when expectWarmLoss => "1 x OnErrorAsync(QueueCacheMissException) from the idle cursor, event 2 skipped; 1 activation",
+            _ => "no OnErrorAsync (idle cursor refreshed to event 2), OnNextAsync(2); nothing lost; 1 activation",
         };
         return r with { Id = id, Title = Titles[id], Expected = expected, Pass = pass };
     }

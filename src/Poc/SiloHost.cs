@@ -25,6 +25,9 @@ public static class Timings
     // No event on S for longer than StreamInactivityPeriod + cleanup cadence (StreamInactivityPeriod / 10).
     public static readonly TimeSpan QuietPeriod = StreamInactivityPeriod + StreamInactivityPeriod / 10 + TimeSpan.FromSeconds(4);
 
+    // Longer than eviction + MetadataMinTimeInCache (+ its purge cadence), shorter than StreamInactivityPeriod.
+    public static readonly TimeSpan WarmQuietPeriod = TimeSpan.FromSeconds(12);
+
     public static Dictionary<string, double> Describe() => new()
     {
         [nameof(DataMinTimeInCache)] = DataMinTimeInCache.TotalSeconds,
@@ -36,6 +39,7 @@ public static class Timings
         [nameof(PingInterval)] = PingInterval.TotalSeconds,
         [nameof(FillerInterval)] = FillerInterval.TotalSeconds,
         [nameof(QuietPeriod)] = QuietPeriod.TotalSeconds,
+        [nameof(WarmQuietPeriod)] = WarmQuietPeriod.TotalSeconds,
         [nameof(CheckpointPersistInterval)] = CheckpointPersistInterval.TotalSeconds,
         ["Partitions"] = 1,
     };

@@ -8,7 +8,7 @@ cd "$(dirname "$0")"
 
 VERSIONS="${VERSIONS:-10.2.1 10.3.1}"
 TRANSPORTS="${TRANSPORTS:-memory eventhub}"
-SCENARIOS="${SCENARIOS:-A,B,C,D}"
+SCENARIOS="${SCENARIOS:-A,B,C,D,E}"
 
 if [[ " $TRANSPORTS " == *" eventhub "* ]]; then
   docker info >/dev/null 2>&1 || { echo "Docker daemon not running (open -a Docker)"; exit 1; }
