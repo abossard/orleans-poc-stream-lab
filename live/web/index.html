@@ -17,9 +17,10 @@
       .row { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; margin: 6px 0; }
       .row form { margin-left: 16px; }
       .muted { color: #8a96a3; margin: 4px 0; }
-      .legend span { margin-right: 12px; white-space: nowrap; }
+      .legend { display: flex; flex-wrap: wrap; gap: 2px 14px; }
+      .legend span { white-space: nowrap; }
       main { display: grid; grid-template-columns: 1fr 320px; }
-      .lanes { display: grid; grid-template-columns: 1fr 1fr; }
+      .lanes { display: grid; grid-template-columns: 1fr 1fr; min-width: 0; }
       .lane { padding: 10px 14px; border-right: 1px solid #2a323b; min-width: 0; }
       aside { padding: 10px 14px; font-size: 12px; }
       .term { margin-bottom: 8px; }
@@ -33,18 +34,17 @@
       .bar .cached { position: absolute; top: 0; bottom: 0; right: 0; background: #2b5d3c; }
       .ends { display: flex; justify-content: space-between; color: #8a96a3; }
       .mark { position: relative; height: 16px; }
-      .mark span { position: absolute; white-space: nowrap; transform: translateX(-4px); }
+      .mark span { position: absolute; white-space: nowrap; }
       .mark.stale span { color: #ff8a80; }
       .axis { position: relative; height: 14px; color: #6b7682; border-bottom: 1px solid #2a323b; }
       .axis span { position: absolute; transform: translateX(-50%); font-size: 11px; }
       .stream { padding: 4px 0; border-bottom: 1px solid #1f262d; }
-      .stream.warmup { opacity: 0.5; }
       .badges { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
       .badges span { padding: 0 6px; border-radius: 8px; background: #252c34; color: #8a96a3; }
       .badges span.on { background: #1d3a4f; color: #bfe0ff; }
       .badges span.bad { background: #4a1c1c; color: #ffb4ab; }
-      .track { position: relative; height: 44px; overflow: hidden; }
-      .m { position: absolute; transform: translateX(-50%); font-size: 12px; line-height: 14px; cursor: default; }
+      .track { position: relative; height: 58px; overflow: hidden; }
+      .m { position: absolute; transform: translateX(-50%); font-size: 13px; line-height: 14px; cursor: default; }
       .ok { color: #5fd38a; }
       .err { color: #ff6b6b; }
       .pub { color: #c9d1d9; }
@@ -55,7 +55,6 @@
       .meta { color: #d2a8ff; font-weight: bold; }
       .dim { color: #8a96a3; }
       .log { max-height: 320px; overflow: auto; margin: 8px 0 0; padding-left: 30px; font-size: 12px; color: #aab4be; }
-      .log li { white-space: nowrap; }
       .log li.err { color: #ff8a80; }
       .log li.ok { color: #9fe0b5; }
     </style>

@@ -17,23 +17,23 @@ type State = {
 
 // One backend per Orleans version (see live/compose.yml). Override with ?lanes=http://host:port,http://host:port
 const LANES =
-  new URLSearchParams(location.search).get('lanes')?.split(',') ?? [8021, 8031].map(p => `${location.protocol}//${location.hostname}:${p}`)
+  new URLSearchParams(location.search).get('lanes')?.split(',') ?? [8102, 8103].map(p => `${location.protocol}//${location.hostname}:${p}`)
 const LOST_AFTER_MS = 8000
 const WINDOW_MS = 180_000
 const MAIN_SCENARIOS = ['A', 'B', 'C', 'D', 'E']
 
-// Row 0: pulling agent, row 1: grain, row 2: queue cache.
+// Rows: 0 pulling agent, 1 grain callbacks, 2 events on S, 3 queue cache.
 const MARKERS: Record<string, { glyph: string; row: number; cls: string; label: string }> = {
   SubscriptionAdded: { glyph: 'R', row: 0, cls: 'agent', label: 'stream registered (RegisterStream)' },
   GetSequenceToken: { glyph: '◆', row: 0, cls: 'hs', label: 'handshake: GetSequenceToken' },
   StreamInactive: { glyph: 'I', row: 0, cls: 'agent', label: 'removed after StreamInactivityPeriod' },
   Cursor: { glyph: '▾', row: 0, cls: 'cursor', label: 'cache cursor moved' },
-  Published: { glyph: '○', row: 1, cls: 'pub', label: 'published' },
-  OnNextAsync: { glyph: '●', row: 1, cls: 'ok', label: 'OnNextAsync (delivered)' },
   OnErrorAsync: { glyph: '▲', row: 1, cls: 'err', label: 'OnErrorAsync(QueueCacheMissException)' },
   Deactivated: { glyph: 'D', row: 1, cls: 'dim', label: 'activation collected' },
-  Purged: { glyph: 'P', row: 2, cls: 'cache', label: "stream's token purged, lastPurgedToken set" },
-  PurgeMetadataExpired: { glyph: 'M', row: 2, cls: 'meta', label: 'lastPurgedToken expired' },
+  Published: { glyph: '○', row: 2, cls: 'pub', label: 'published' },
+  OnNextAsync: { glyph: '●', row: 2, cls: 'ok', label: 'OnNextAsync (delivered)' },
+  Purged: { glyph: 'P', row: 3, cls: 'cache', label: "stream's token purged, lastPurgedToken set" },
+  PurgeMetadataExpired: { glyph: 'M', row: 3, cls: 'meta', label: 'lastPurgedToken expired' },
 }
 
 const post = (url: string, body?: object) =>
@@ -43,6 +43,7 @@ const seqs = (text: string) => [...text.matchAll(/(?:SequenceNumber: |SeqNum=)(\
 const short = (seq: string) => (seq.length > 9 ? '…' + seq.slice(-4) : seq)
 const pretty = (detail: string) =>
   detail
+    .replace(/Orleans\.Streams\.QueueCacheMissException: Item not found in cache\.\s+/, 'QueueCacheMissException ')
     .replace(/EventHubSequenceToken\(EventHubOffset: (\d*), SequenceNumber: (\d+), EventIndex: \d+\)/g, (_, o, s) => `seq ${s} ${o ? `(offset ${o})` : '(empty offset)'}`)
     .replace(/\[EventSequenceToken: SeqNum=(\d+), EventIndex=\d+\]/g, (_, s) => `seq ${short(s)}`)
     .replace(/\d{12,}/g, short)
@@ -150,7 +151,8 @@ function Lane({ url }: { url: string }) {
   const t0 = (events.find(e => e.kind === 'Step') ?? events[0])?.at ?? now
   const span = Math.max(40_000, now - start)
   const x = (at: number) => ((at - start) / span) * 100
-  const keys = [...new Set(events.map(e => e.stream).filter(Boolean))].sort((a, b) => Number(a.startsWith('warmup')) - Number(b.startsWith('warmup')))
+  // Warm-up streams (Scenarios.WarmUp) only prove the receiver reads; they stay in the log.
+  const keys = [...new Set(events.map(e => e.stream).filter(k => k && !k.startsWith('warmup')))]
   const result = lastOf(events, 'Result', 'Error')
   const ticks = []
   for (let t = Math.ceil((start - t0) / 10_000) * 10; t0 + t * 1000 <= start + span; t += 10) ticks.push(t)
@@ -224,7 +226,7 @@ function CacheStrip({ state, events }: { state?: State; events: FeedEvent[] }) {
       </div>
       {marks.map(m => (
         <div key={m.text} className={`mark ${m.cls} ${m.seq < oldest ? 'stale' : ''}`}>
-          <span style={{ left: `${pos(m.seq)}%` }}>
+          <span style={{ left: `${pos(m.seq)}%`, transform: pos(m.seq) > 50 ? 'translateX(-100%)' : undefined }}>
             {m.text} seq {short(String(m.seq))}
             {m.seq < oldest ? ' older than oldest: purged' : ''}
           </span>
@@ -254,7 +256,7 @@ function StreamRow({ streamKey, events, state, x, now }: { streamKey: string; ev
       ? 'lastPurgedToken expired'
       : ''
   return (
-    <div className={`stream ${streamKey.startsWith('warmup') ? 'warmup' : ''}`}>
+    <div className="stream">
       <div className="badges">
         <b>entity-update/{streamKey}</b>
         <span className={stream ? 'on' : ''}>{registered}</span>
@@ -276,7 +278,7 @@ function StreamRow({ streamKey, events, state, x, now }: { streamKey: string; ev
             m && (
               <span key={i} className={`m ${lost(e) ? 'err' : m.cls}`} style={{ left: `${x(e.at)}%`, top: `${m.row * 14}px` }} title={`${e.kind} ${e.version ?? ''} ${pretty(e.detail)}`}>
                 {lost(e) ? '✕' : m.glyph}
-                {m.row === 1 && e.version}
+                {m.row === 2 && e.version}
               </span>
             )
           )
