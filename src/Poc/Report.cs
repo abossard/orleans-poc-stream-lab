@@ -30,14 +30,14 @@ public static class Report
         var sb = new StringBuilder();
         sb.AppendLine("# Results summary");
         sb.AppendLine();
-        sb.AppendLine("| Scenario | Transport | Orleans | OnErrorAsync | Delivered | Lost | Expected | Result |");
-        sb.AppendLine("|---|---|---|---|---|---|---|---|");
+        sb.AppendLine("| Scenario | Transport | Orleans | DataMaxAgeInCache (s) | MetadataMinTimeInCache (s) | OnErrorAsync | Delivered | Lost | Max cached messages | Max cache bytes | Expected | Result |");
+        sb.AppendLine("|---|---|---|---:|---:|---|---|---|---:|---:|---|---|");
         foreach (var (run, s) in runs
                      .SelectMany(r => r.Scenarios.Select(s => (r, s)))
-                     .OrderBy(x => x.s.Id).ThenBy(x => x.r.Transport).ThenBy(x => x.r.OrleansVersion))
+                     .OrderBy(x => Array.FindIndex(Scenarios.All, v => v.Id == x.s.Id)).ThenBy(x => x.r.Transport).ThenBy(x => x.r.OrleansVersion))
         {
             var errors = s.OnErrorCount == 0 ? "0" : $"{s.OnErrorCount} ({string.Join(", ", s.ErrorTypes)})";
-            sb.AppendLine($"| {s.Id} | {run.Transport} | {run.OrleansVersion} | {errors} | {s.Delivered.Length}/{s.Published.Length} | {Range(s.Lost)} | {Cell(s.Expected)} | {(s.Pass ? "PASS" : "FAIL")} |");
+            sb.AppendLine($"| {s.Id} | {run.Transport} | {run.OrleansVersion} | {Setting(s, "DataMaxAgeInCache")} | {Setting(s, "MetadataMinTimeInCache")} | {errors} | {s.Delivered.Length}/{s.Published.Length} | {Range(s.Lost)} | {s.CacheMaxMessages} | {s.CacheMaxBytes} | {Cell(s.Expected)} | {(s.Pass ? "PASS" : "FAIL")} |");
         }
 
         File.WriteAllText(Path.Combine(outDir, "summary.md"), sb.ToString());
@@ -68,6 +68,8 @@ public static class Report
             sb.AppendLine($"- Expected: {s.Expected}");
             sb.AppendLine($"- Observed: {s.Observed}");
             sb.AppendLine($"- Result: {(s.Pass ? "PASS" : "FAIL")}");
+            sb.AppendLine($"- Settings (s): {string.Join(", ", (s.Settings ?? []).Select(x => $"{x.Key}={x.Value}"))}");
+            sb.AppendLine($"- Pooled cache: max {s.CacheMaxMessages} messages, max {s.CacheMaxBytes} bytes allocated in blocks");
             sb.AppendLine();
             sb.AppendLine("| t (s) | Source | Grain | Kind | Version | Detail |");
             sb.AppendLine("|---:|---|---|---|---:|---|");
@@ -86,6 +88,9 @@ public static class Report
         _ when values.Length > 1 && values[^1] - values[0] == values.Length - 1 => $"{values.Length} ({values[0]}..{values[^1]})",
         _ => $"{values.Length} ({string.Join(",", values)})",
     };
+
+    private static string Setting(ScenarioResult s, string key) =>
+        s.Settings is not null && s.Settings.TryGetValue(key, out var value) ? value.ToString() : "";
 
     private static string Cell(string text) => text.Replace("|", "\\|").Replace("\n", " ").Replace("\r", "");
 }

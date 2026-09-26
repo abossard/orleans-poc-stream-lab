@@ -13,7 +13,7 @@ if (options.ContainsKey("summary"))
 }
 
 var transport = options.GetValueOrDefault("transport", "memory");
-var scenarioIds = options.GetValueOrDefault("scenarios", "A,B,C,D,E").Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+var scenarioIds = options.GetValueOrDefault("scenarios", string.Join(",", Scenarios.All.Select(v => v.Id))).Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
 
 var assemblies = new[] { typeof(IGrain).Assembly, typeof(StreamPullingAgentOptions).Assembly, typeof(EventHubOptions).Assembly }
     .ToDictionary(a => a.GetName().Name!, InformationalVersion);
@@ -26,7 +26,7 @@ var runner = new Scenarios(transport, orleansVersion, logDir);
 var run = new RunReport(orleansVersion.ToString(), assemblies, transport, DateTime.UtcNow, Timings.Describe(), []);
 for (var i = 0; i < scenarioIds.Length; i++)
 {
-    Console.WriteLine($"  scenario {scenarioIds[i]}: {Scenarios.Titles[scenarioIds[i]]}");
+    Console.WriteLine($"  scenario {scenarioIds[i]}: {Scenarios.Find(scenarioIds[i]).Title}");
     var result = await runner.Run(scenarioIds[i], i);
     Console.WriteLine($"    expected: {result.Expected}");
     Console.WriteLine($"    observed: {result.Observed}  => {(result.Pass ? "PASS" : "FAIL")}");

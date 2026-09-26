@@ -15,6 +15,12 @@ public static class Timings
     public static readonly TimeSpan DataMinTimeInCache = TimeSpan.FromSeconds(1);      // prod 10 s
     public static readonly TimeSpan DataMaxAgeInCache = TimeSpan.FromSeconds(3);       // prod 30 s
     public static readonly TimeSpan MetadataMinTimeInCache = TimeSpan.FromSeconds(5);  // prod 10 min (default, not overridden)
+
+    // Cache-size variants: "mid" is still shorter than every quiet period, "big" is longer than all of them.
+    public static readonly TimeSpan MidDataMaxAgeInCache = TimeSpan.FromSeconds(6);
+    public static readonly TimeSpan BigDataMaxAgeInCache = TimeSpan.FromSeconds(40);
+    public static readonly TimeSpan BigMetadataMinTimeInCache = TimeSpan.FromSeconds(40);
+    public static readonly TimeSpan StatisticMonitorWriteInterval = TimeSpan.FromSeconds(1); // default 5 min
     public static readonly TimeSpan StreamInactivityPeriod = TimeSpan.FromSeconds(20); // prod 30 min (default)
     public static readonly TimeSpan CollectionAge = TimeSpan.FromSeconds(10);          // prod 15 min (default)
     public static readonly TimeSpan CollectionQuantum = TimeSpan.FromSeconds(2);       // prod 1 min (default)
@@ -28,6 +34,9 @@ public static class Timings
     // Longer than eviction + MetadataMinTimeInCache (+ its purge cadence), shorter than StreamInactivityPeriod.
     public static readonly TimeSpan WarmQuietPeriod = TimeSpan.FromSeconds(12);
 
+    // Same, for MidDataMaxAgeInCache: 6 s + 5 s + 1 s cadence < 17 s < 20 s.
+    public static readonly TimeSpan MidWarmQuietPeriod = TimeSpan.FromSeconds(17);
+
     public static Dictionary<string, double> Describe() => new()
     {
         [nameof(DataMinTimeInCache)] = DataMinTimeInCache.TotalSeconds,
@@ -40,6 +49,11 @@ public static class Timings
         [nameof(FillerInterval)] = FillerInterval.TotalSeconds,
         [nameof(QuietPeriod)] = QuietPeriod.TotalSeconds,
         [nameof(WarmQuietPeriod)] = WarmQuietPeriod.TotalSeconds,
+        [nameof(MidWarmQuietPeriod)] = MidWarmQuietPeriod.TotalSeconds,
+        [nameof(MidDataMaxAgeInCache)] = MidDataMaxAgeInCache.TotalSeconds,
+        [nameof(BigDataMaxAgeInCache)] = BigDataMaxAgeInCache.TotalSeconds,
+        [nameof(BigMetadataMinTimeInCache)] = BigMetadataMinTimeInCache.TotalSeconds,
+        [nameof(StatisticMonitorWriteInterval)] = StatisticMonitorWriteInterval.TotalSeconds,
         [nameof(CheckpointPersistInterval)] = CheckpointPersistInterval.TotalSeconds,
         ["Partitions"] = 1,
     };
@@ -58,7 +72,7 @@ public static class EventHubEmulator
 
 public static class SiloHost
 {
-    public static IHost Build(string transport, Timeline timeline, string serviceId, int portOffset, TimeSpan metadataMinTimeInCache, TextWriter logFile)
+    public static IHost Build(string transport, Timeline timeline, string serviceId, int portOffset, TimeSpan dataMaxAgeInCache, TimeSpan metadataMinTimeInCache, TextWriter logFile)
     {
         var builder = Host.CreateApplicationBuilder(new HostApplicationBuilderSettings { DisableDefaults = true });
         builder.Logging.ClearProviders();
@@ -83,7 +97,7 @@ public static class SiloHost
                     silo.AddMemoryStreams(Names.Provider, c =>
                     {
                         c.ConfigurePartitioning(1);
-                        ConfigureLikeProd(c, metadataMinTimeInCache);
+                        ConfigureLikeProd(c, dataMaxAgeInCache, metadataMinTimeInCache);
                     });
                     break;
                 case "eventhub":
@@ -100,7 +114,7 @@ public static class SiloHost
                             o.TableName = EventHubEmulator.CheckpointTable;
                             o.PersistInterval = Timings.CheckpointPersistInterval;
                         }));
-                        ConfigureLikeProd(c, metadataMinTimeInCache);
+                        ConfigureLikeProd(c, dataMaxAgeInCache, metadataMinTimeInCache);
                     });
                     break;
                 default:
@@ -112,14 +126,15 @@ public static class SiloHost
     }
 
     // Same knobs as Monitor.HealthIntelligence.Insights.Silo/Program.cs L223-243, plus scaled values for the defaults prod relies on.
-    private static void ConfigureLikeProd(ISiloRecoverableStreamConfigurator c, TimeSpan metadataMinTimeInCache)
+    private static void ConfigureLikeProd(ISiloRecoverableStreamConfigurator c, TimeSpan dataMaxAgeInCache, TimeSpan metadataMinTimeInCache)
     {
         c.ConfigureCacheEviction(ob => ob.Configure(o =>
         {
             o.DataMinTimeInCache = Timings.DataMinTimeInCache;
-            o.DataMaxAgeInCache = Timings.DataMaxAgeInCache;
+            o.DataMaxAgeInCache = dataMaxAgeInCache;
             o.MetadataMinTimeInCache = metadataMinTimeInCache;
         }));
+        c.ConfigureStatistics(ob => ob.Configure(o => o.StatisticMonitorWriteInterval = Timings.StatisticMonitorWriteInterval));
         c.ConfigurePullingAgent(ob => ob.Configure(o => o.StreamInactivityPeriod = Timings.StreamInactivityPeriod));
         c.ConfigureStreamPubSub(StreamPubSubType.ImplicitOnly);
     }
