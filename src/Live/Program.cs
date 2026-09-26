@@ -23,7 +23,7 @@ app.UseStaticFiles();
 app.MapGet("/api/events", (Feed feed, CancellationToken ct) => TypedResults.ServerSentEvents(feed.Subscribe(ct)));
 app.MapGet("/api/state", (Lane lane) => lane.State());
 app.MapPost("/api/publish", async (Lane lane, PublishRequest r) =>
-    await lane.Publish(r.Key, r.Version) is { } version ? Results.Ok(new { r.Key, version }) : Results.Conflict("live silo not ready"));
+    await lane.Publish(r.Key) is { } version ? Results.Ok(new { r.Key, version }) : Results.Conflict("live silo not ready"));
 app.MapPost("/api/scenarios/{id}/run", (Lane lane, string id) =>
     Scenarios.All.All(v => v.Id != id) ? Results.NotFound() : lane.TryRestart(id, null) ? Results.Accepted() : Results.Conflict("busy"));
 app.MapPost("/api/reset", (Lane lane, string? transport) =>
@@ -31,7 +31,7 @@ app.MapPost("/api/reset", (Lane lane, string? transport) =>
     : lane.TryRestart(null, transport) ? Results.Accepted() : Results.Conflict("busy"));
 app.Run();
 
-public sealed record PublishRequest(string Key, int? Version);
+public sealed record PublishRequest(string Key);
 
 /// <param name="At">Unix time in ms when the backend saw it.</param>
 public sealed record FeedEvent(long At, string Source, string Stream, string Kind, string Detail, int? Version);
@@ -98,16 +98,13 @@ public sealed class Lane : IHostedService
     public static readonly Version Orleans = Version.Parse(Regex.Match(
         typeof(StreamPullingAgentOptions).Assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>()!.InformationalVersion, @"^\d+(\.\d+)+").Value);
 
-    // Silo ports are 11111 + offset and 30000 + offset; set SILO_PORT_OFFSET when another silo runs on this host.
-    private static readonly int PortOffset = int.Parse(Environment.GetEnvironmentVariable("SILO_PORT_OFFSET") ?? "0");
     private static readonly string LogDir = Directory.CreateDirectory(Path.Combine(Path.GetTempPath(), "poc-logs")).FullName;
 
     private readonly Feed feed;
     private readonly Timeline timeline = new();
     private readonly SemaphoreSlim gate = new(1, 1);
     private readonly ConcurrentDictionary<string, int> published = new();
-    private readonly CancellationTokenSource stopping = new();
-    private string transport = Environment.GetEnvironmentVariable("TRANSPORT") ?? "eventhub";
+    private string transport = "eventhub";
     private string status = "starting";
     private Variant settings = Scenarios.Find("A");
     private IHost? live;
@@ -127,15 +124,11 @@ public sealed class Lane : IHostedService
     {
         // The Event Hubs emulator can take a while to accept connections after compose starts it.
         TryRestart(null, null, attempts: 30);
-        _ = Inspect(stopping.Token);
+        _ = Inspect();
         return Task.CompletedTask;
     }
 
-    public async Task StopAsync(CancellationToken cancellationToken)
-    {
-        await stopping.CancelAsync();
-        await StopLive();
-    }
+    public Task StopAsync(CancellationToken cancellationToken) => StopLive();
 
     public object State() => new
     {
@@ -153,14 +146,14 @@ public sealed class Lane : IHostedService
         snapshot,
     };
 
-    public async Task<int?> Publish(string key, int? version)
+    public async Task<int?> Publish(string key)
     {
         if (live is null || status != "live")
         {
             return null;
         }
 
-        var v = published.AddOrUpdate(key, version ?? 1, (_, last) => version ?? last + 1);
+        var v = published.AddOrUpdate(key, 1, (_, last) => last + 1);
         await live.Services.GetRequiredService<IClusterClient>().GetGrain<IConsumerGrain>(key).Update(v);
         return v;
     }
@@ -214,7 +207,7 @@ public sealed class Lane : IHostedService
         {
             status = $"running {scenario}";
             settings = Scenarios.Find(scenario);
-            var r = await new Scenarios(transport, Orleans, LogDir).Run(scenario, PortOffset + 1, timeline, sp => silo = sp);
+            var r = await new Scenarios(transport, Orleans, LogDir).Run(scenario, 1, timeline, sp => silo = sp);
             silo = null;
             feed.Add("driver", "", "Result", $"{(r.Pass ? "PASS" : "FAIL")}. Expected: {r.Expected}. Observed: {r.Observed}");
         }
@@ -222,7 +215,7 @@ public sealed class Lane : IHostedService
         status = "starting live silo";
         settings = Scenarios.Find("A");
         var suffix = Guid.NewGuid().ToString("N")[..6];
-        var host = SiloHost.Build(transport, timeline, $"live{suffix}", PortOffset, settings.DataMaxAgeInCache, settings.MetadataMinTimeInCache, TextWriter.Null);
+        var host = SiloHost.Build(transport, timeline, $"live{suffix}", 0, settings.DataMaxAgeInCache, settings.MetadataMinTimeInCache, TextWriter.Null);
         try
         {
             await host.StartAsync();
@@ -231,8 +224,15 @@ public sealed class Lane : IHostedService
             await Scenarios.WarmUp(client, timeline, suffix);
             liveLoops = new CancellationTokenSource();
             liveTasks = Task.WhenAll(
-                Scenarios.RunFillers(client.GetStreamProvider(Names.Provider), suffix, timeline, liveLoops.Token),
-                KeepAlive(client, liveLoops.Token));
+                    Scenarios.RunFillers(client.GetStreamProvider(Names.Provider), suffix, timeline, liveLoops.Token),
+                    KeepAlive(client, liveLoops.Token))
+                .ContinueWith(t =>
+                {
+                    if (t.IsFaulted)
+                    {
+                        feed.Add("backend", "", "Error", $"live silo fillers or keep-alive stopped: {t.Exception!.GetBaseException().Message}");
+                    }
+                });
             live = host;
             status = "live";
         }
@@ -251,13 +251,12 @@ public sealed class Lane : IHostedService
             return;
         }
 
-        status = "stopping live silo";
-        silo = null;
+        var host = live;
+        (live, silo, status) = (null, null, "stopping live silo");
         await liveLoops!.CancelAsync();
         await liveTasks;
-        await live.StopAsync();
-        live.Dispose();
-        live = null;
+        await host.StopAsync();
+        host.Dispose();
     }
 
     // Like prod discovery calling GetConfig(): published grains stay active, so they keep their expectedToken.
@@ -276,13 +275,13 @@ public sealed class Lane : IHostedService
         }
     }
 
-    private async Task Inspect(CancellationToken ct)
+    private async Task Inspect()
     {
         Snapshot? previous = null;
         IServiceProvider? previousSilo = null;
-        while (!ct.IsCancellationRequested)
+        while (true)
         {
-            await Task.Delay(250, CancellationToken.None);
+            await Task.Delay(250);
             var current = silo;
             if (current != previousSilo)
             {
@@ -309,8 +308,7 @@ public sealed class Lane : IHostedService
 
     private void Diff(Snapshot before, Snapshot after)
     {
-        var purgedBefore = before.Cache?.LastPurgedToken ?? [];
-        var purgedAfter = after.Cache?.LastPurgedToken ?? [];
+        var (purgedBefore, purgedAfter) = (before.Cache.LastPurgedToken, after.Cache.LastPurgedToken);
         foreach (var (key, p) in purgedAfter.Where(kv => !purgedBefore.TryGetValue(kv.Key, out var old) || old.Seq != kv.Value.Seq))
         {
             feed.Add("cache", key, "Purged", $"PooledQueueCache purged token {p.Seq}: lastPurgedToken = {p.Seq}");
@@ -353,12 +351,8 @@ public sealed class Lane : IHostedService
     {
         public void OnNext(T value) => next(value);
 
-        public void OnError(Exception error)
-        {
-        }
+        public void OnError(Exception error) { }
 
-        public void OnCompleted()
-        {
-        }
+        public void OnCompleted() { }
     }
 }

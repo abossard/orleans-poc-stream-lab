@@ -10,11 +10,8 @@ FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 ARG ORLEANS_VERSION=10.3.1
 WORKDIR /src
 COPY Directory.Build.props Directory.Packages.props ./
-COPY src/Poc/Poc.csproj src/Poc/
-COPY src/Live/Live.csproj src/Live/
-RUN dotnet restore src/Live -p:OrleansVersion=$ORLEANS_VERSION
 COPY src/ src/
-RUN dotnet publish src/Live -c Release -p:OrleansVersion=$ORLEANS_VERSION --no-restore -o /app
+RUN dotnet publish src/Live -c Release -p:OrleansVersion=$ORLEANS_VERSION -o /app
 
 FROM mcr.microsoft.com/dotnet/aspnet:10.0
 WORKDIR /app

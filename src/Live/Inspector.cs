@@ -10,17 +10,18 @@ namespace Live;
 // Sequence numbers are strings: memory-stream tokens are tick-based and exceed JavaScript's safe integer range.
 public sealed record Purged(string Seq, double AgeS);
 
-public sealed record Consumer(string State, string? Cursor, string? CursorSeq, string? LastTokenSeq);
+public sealed record Consumer(string? Cursor, string? CursorSeq);
 
-public sealed record StreamState(string Key, bool Registered, double IdleS, Consumer[] Consumers);
+public sealed record StreamState(string Key, double IdleS, Consumer[] Consumers);
 
 public sealed record CacheState(int Items, string? Oldest, string? Newest, Dictionary<string, Purged> LastPurgedToken);
 
-public sealed record Snapshot(CacheState? Cache, StreamState[] Streams);
+public sealed record Snapshot(CacheState Cache, StreamState[] Streams);
 
 /// <summary>
 /// Reads PersistentStreamPullingAgent and PooledQueueCache internals by reflection (field names are the same in 10.2.1 and 10.3.1).
 /// The agent mutates them on its own scheduler, so a read can fail; the caller skips that tick.
+/// Returns null before the receiver has a cache and after agent shutdown (queueCache = null).
 /// </summary>
 public static class Inspector
 {
@@ -32,20 +33,17 @@ public static class Inspector
         var agent = ((IEnumerable<KeyValuePair<GrainId, IGrainContext>>)silo.GetRequiredService(ActivationDirectory))
             .Select(kv => kv.Value)
             .FirstOrDefault(v => v.GetType().Name == "PersistentStreamPullingAgent");
-        if (agent is null)
+        if (Unwrap(Get(agent, "queueCache")) is not { } cache)
         {
             return null;
         }
 
         var now = DateTime.UtcNow;
-        var cache = Unwrap(Get(agent, "queueCache"));
-        var cacheState = cache is null
-            ? null
-            : new CacheState(
-                cache.ItemCount,
-                cache.Oldest?.SequenceNumber.ToString(),
-                cache.Newest?.SequenceNumber.ToString(),
-                ((Dictionary<StreamId, (DateTime TimeStamp, StreamSequenceToken Token)>)Get(cache, "lastPurgedToken")!).ToArray()
+        var cacheState = new CacheState(
+            cache.ItemCount,
+            cache.Oldest?.SequenceNumber.ToString(),
+            cache.Newest?.SequenceNumber.ToString(),
+            ((Dictionary<StreamId, (DateTime TimeStamp, StreamSequenceToken Token)>)Get(cache, "lastPurgedToken")!).ToArray()
                 .Where(kv => kv.Key.GetNamespace() == Names.ConsumerNamespace)
                 .ToDictionary(kv => kv.Key.GetKeyAsString(), kv => new Purged(kv.Value.Token.SequenceNumber.ToString(), (now - kv.Value.TimeStamp).TotalSeconds)));
 
@@ -54,7 +52,6 @@ public static class Inspector
             .Where(s => s.Id.GetNamespace() == Names.ConsumerNamespace)
             .Select(s => new StreamState(
                 s.Id.GetKeyAsString(),
-                (bool)Get(s.Collection, "StreamRegistered")!,
                 (now - (DateTime)Get(s.Collection, "lastActivityTime")!).TotalSeconds,
                 ((IDictionary)Get(s.Collection, "queueData")!).Values.Cast<object>().Select(ReadConsumer).ToArray()))
             .ToArray();
@@ -65,12 +62,7 @@ public static class Inspector
     {
         // StreamConsumerData.Cursor is the adapter's IQueueCacheCursor; its "cursor" field is PooledQueueCache.Cursor.
         var cursor = Get(Get(data, "Cursor"), "cursor");
-        var lastToken = Get(Get(data, "LastToken"), "Token") as StreamSequenceToken;
-        return new Consumer(
-            Get(data, "State")!.ToString()!,
-            Get(cursor, "State")?.ToString(),
-            (Get(cursor, "SequenceToken") as StreamSequenceToken)?.SequenceNumber.ToString(),
-            lastToken?.SequenceNumber.ToString());
+        return new Consumer(Get(cursor, "State")?.ToString(), (Get(cursor, "SequenceToken") as StreamSequenceToken)?.SequenceNumber.ToString());
     }
 
     // Event Hub: EventHubAdapterReceiver.cache -> EventHubQueueCache.cache. Memory: MemoryPooledCache.cache.

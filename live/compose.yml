@@ -8,7 +8,6 @@ x-backend: &backend
     context: ..
     dockerfile: live/Dockerfile
   depends_on: [emulator, azurite]
-  restart: unless-stopped
 
 # Well-known local emulator and Azurite development credentials, not secrets.
 x-env: &env

@@ -3,8 +3,8 @@ import { createRoot } from 'react-dom/client'
 import { TERMS } from './terms'
 
 type FeedEvent = { at: number; source: string; stream: string; kind: string; detail: string; version: number | null }
-type Consumer = { state: string; cursor: string | null; cursorSeq: string | null; lastTokenSeq: string | null }
-type StreamState = { key: string; registered: boolean; idleS: number; consumers: Consumer[] }
+type Consumer = { cursor: string | null; cursorSeq: string | null }
+type StreamState = { key: string; idleS: number; consumers: Consumer[] }
 type Cache = { items: number; oldest: string | null; newest: string | null; lastPurgedToken: Record<string, { seq: string; ageS: number }> }
 type State = {
   orleans: string
@@ -15,9 +15,8 @@ type State = {
   snapshot: { cache: Cache | null; streams: StreamState[] } | null
 }
 
-// One backend per Orleans version (see live/compose.yml). Override with ?lanes=http://host:port,http://host:port
-const LANES =
-  new URLSearchParams(location.search).get('lanes')?.split(',') ?? [8102, 8103].map(p => `${location.protocol}//${location.hostname}:${p}`)
+// One backend per Orleans version, see live/compose.yml.
+const LANES = [8102, 8103].map(p => `${location.protocol}//${location.hostname}:${p}`)
 const LOST_AFTER_MS = 8000
 const WINDOW_MS = 180_000
 const MAIN_SCENARIOS = ['A', 'B', 'C', 'D', 'E']
@@ -197,7 +196,7 @@ function CacheStrip({ state, events }: { state?: State; events: FeedEvent[] }) {
     return <div className="strip muted">queue cache: empty</div>
   }
   const [oldest, newest] = [BigInt(cache.oldest), BigInt(cache.newest)]
-  const consumerStreams = (state!.snapshot!.streams ?? []).filter(s => !s.key.startsWith('warmup'))
+  const consumerStreams = state!.snapshot!.streams.filter(s => !s.key.startsWith('warmup'))
   const marks: { seq: bigint; text: string; cls: string }[] = []
   for (const s of consumerStreams) {
     const c = s.consumers[0]

@@ -33,6 +33,58 @@ dotnet artifacts/10.2.1/bin/Release/net10.0/Poc.dll --transport eventhub --scena
 
 Output: `results/<version>-<transport>.json` and `.md` (full callback timeline per scenario), `results/logs/<version>-<transport>-<scenario>.log` (silo log, pulling agent at Debug), `results/summary.md`. Each run prints the loaded `Orleans.Streaming` version and path, so you can check which build was used.
 
+## Learn Orleans streams with the live UI
+
+A web page runs the same scenarios on Orleans 10.2.1 and 10.3.1 side by side and shows grain callbacks, handshakes and queue cache changes as they happen.
+
+```bash
+cd live
+docker compose up --build        # first build takes a few minutes
+open http://localhost:8103
+./smoke.sh                       # publish on both lanes, expect OnNextAsync on /api/events
+docker compose down              # compose project orleans-poc-4006-ui
+```
+
+Compose publishes only ports 8102 (10.2.1) and 8103 (10.3.1). The Event Hubs emulator and Azurite stay on the compose network, so you can run the stack next to the root `docker-compose.yml`.
+
+![Scenario E on both versions](docs/live-ui-E.png)
+
+What to click:
+
+- **Run A** (handshake path): both lanes restart on a scenario silo. After 26 s event 2 arrives. On 10.2.1 you see `R ◆ ▲ ●2`: the pulling agent registers S again, `GetSequenceToken` returns event 1's token, the grain gets `OnErrorAsync(QueueCacheMissException)` with `Requested` older than `Low`, then `OnNextAsync(2)`. On 10.3.1 you see `R ◆ ●2` without `▲`. Screenshot: [docs/live-ui-A.png](docs/live-ui-A.png).
+- **Run E** (idle-cursor path): event 2 arrives after 12 s while S is still registered. Before it, the strip shows the cache cursor older than the oldest cached event and the badge `lastPurgedToken expired`. On 10.2.1 you get `▲` with `Requested: seq N (empty offset)`, then `✕2`: the agent never delivers event 2, and the cache purges it a few seconds later. On 10.3.1 `Cursor.Refresh` moves the idle cursor and the grain gets `OnNextAsync(2)`.
+- **Run B, C, D** and the variants: same as the CLI (see [What it proves](#what-it-proves)). The result line under the lane header shows the coded expectation and PASS or FAIL.
+- **Publish on both**: publishes on the live silo that runs between scenarios (scenario A timings, fillers, keep-alive Ping). Publish `s1`, wait 12 s and publish again for path E, or wait 26 s for path A.
+- **Reset** with `memory` selected switches both lanes to memory streams. E then loses event 2 on 10.3.1 as well.
+
+What each view shows:
+
+| View | Orleans concept | Source |
+|---|---|---|
+| Queue cache strip: cached range, hatched purged part, cursor, `lastPurgedToken` and `expectedToken` markers | `PooledQueueCache` oldest and newest `StreamSequenceToken`, eviction by `DataMaxAgeInCache` | [TimePurgePredicate.cs L32-36](https://github.com/dotnet/orleans/blob/v10.3.1/src/Orleans.Streaming/Common/PooledCache/TimePurgePredicate.cs#L32-L36) |
+| Badge `registered, idle x s of 20 s`, markers `R` and `I` | stream registration and `CleanupPubSubCache` after `StreamInactivityPeriod` | [v10.2.1 L642](https://github.com/dotnet/orleans/blob/v10.2.1/src/Orleans.Streaming/PersistentStreams/PersistentStreamPullingAgent.cs#L642), [L575-585](https://github.com/dotnet/orleans/blob/v10.2.1/src/Orleans.Streaming/PersistentStreams/PersistentStreamPullingAgent.cs#L575-L585) |
+| Marker `◆` and log line `GetSequenceToken returned DeliveryToken(...)` | handshake, `expectedToken` | [v10.2.1 L320-334](https://github.com/dotnet/orleans/blob/v10.2.1/src/Orleans.Streaming/PersistentStreams/PersistentStreamPullingAgent.cs#L320-L334), [StreamSubscriptionHandleImpl.cs L191](https://github.com/dotnet/orleans/blob/v10.3.1/src/Orleans.Streaming/Internal/StreamSubscriptionHandleImpl.cs#L191) |
+| Marker `▲` then `●` on 10.2.1, only `●` on 10.3.1 | `ErrorProtocol`, fallback to `cacheToken` | [v10.2.1 L354-379](https://github.com/dotnet/orleans/blob/v10.2.1/src/Orleans.Streaming/PersistentStreams/PersistentStreamPullingAgent.cs#L354-L379), [v10.3.1 L362-373](https://github.com/dotnet/orleans/blob/v10.3.1/src/Orleans.Streaming/PersistentStreams/PersistentStreamPullingAgent.cs#L362-L373) |
+| Markers `P` and `M`, badge `lastPurgedToken` | purge metadata, `MetadataMinTimeInCache` | [PooledQueueCache.cs v10.2.1 L140-166](https://github.com/dotnet/orleans/blob/v10.2.1/src/Orleans.Streaming/Common/PooledCache/PooledQueueCache.cs#L140-L166), [L198-220](https://github.com/dotnet/orleans/blob/v10.2.1/src/Orleans.Streaming/Common/PooledCache/PooledQueueCache.cs#L198-L220) |
+| Badge `cache cursor Idle at N, purged`, marker `▾`, `✕` lost | idle cursor in `RunConsumerCursor`, `Cursor.Refresh` | [EventHubAdapterReceiver.cs v10.2.1 L399-401](https://github.com/dotnet/orleans/blob/v10.2.1/src/Azure/Orleans.Streaming.EventHubs/Providers/Streams/EventHub/EventHubAdapterReceiver.cs#L399-L401), [v10.3.1 L443-446](https://github.com/dotnet/orleans/blob/v10.3.1/src/Azure/Orleans.Streaming.EventHubs/Providers/Streams/EventHub/EventHubAdapterReceiver.cs#L443-L446), [PersistentStreamPullingAgent.cs v10.2.1 L799-804](https://github.com/dotnet/orleans/blob/v10.2.1/src/Orleans.Streaming/PersistentStreams/PersistentStreamPullingAgent.cs#L799-L804) |
+| Badge `activation alive` / `no activation`, marker `D` | activation collection, `CollectionAge` | [GrainCollectionOptions.cs L24](https://github.com/dotnet/orleans/blob/v10.3.1/src/Orleans.Runtime/Configuration/Options/GrainCollectionOptions.cs#L24) |
+
+The Terms panel on the page has the same terms with more source links.
+
+How it works:
+
+- `live/compose.yml` builds `live/Dockerfile` twice (`ORLEANS_VERSION=10.2.1` and `10.3.1`). Each backend (`src/Live`) co-hosts the silo and a minimal API, serves the built React page (`live/web`) and reads its own Event Hub (`poc-hub-1021`, `poc-hub-1031`, 1 partition each), so the lanes do not share traffic.
+- Scenarios call `Scenarios.Run` from `src/Poc` with the shared `Timeline`, so the UI runs the exact CLI scenarios and expectations.
+- Event sources: `Timeline` (grain callbacks, `HandshakeProbe`, pulling-agent log lines), the Orleans `StreamingEvents` diagnostics (`SubscriptionAdded`, `SubscriptionAttached`, `StreamInactive`), and `src/Live/Inspector.cs`, which reads `PersistentStreamPullingAgent.pubSubCache`, the consumer cursors and `PooledQueueCache` (oldest, newest, `lastPurgedToken`) by reflection every 250 ms.
+- API: `GET /api/events` (Server-Sent Events, replays everything since the last reset), `GET /api/state`, `POST /api/publish {"key":"s1"}`, `POST /api/scenarios/{id}/run`, `POST /api/reset?transport=eventhub|memory`.
+
+Limits:
+
+- The inspector reads Orleans internals that are the same in 10.2.1 and 10.3.1. Other versions may need new field names.
+- The inspector samples state every 250 ms, so you cannot see the `Refresh` call. You see its effect: on 10.3.1 the cursor moves to event 2 and no `▲` follows.
+- The two lanes start their silos independently, so their clocks differ by a few seconds. 10.2.1 finishes E later because the driver waits 30 s for the lost event.
+- In C the driver publishes the burst on the stream directly, so lost events show only in the result line, not as `✕`.
+
 ## Setup
 
 | Piece | PoC | Prod equivalent |
@@ -153,4 +205,8 @@ How to tell the two paths apart in logs: the handshake path's `Requested` token 
 | `Directory.Build.props`, `Directory.Packages.props` | `-p:OrleansVersion=...` switch, per-version output under `artifacts/<version>/` |
 | `docker-compose.yml`, `emulator/Config.json` | Event Hubs emulator (1 partition, consumer group `orleans`) + Azurite |
 | `run-all.sh` | full matrix and `results/summary.md` |
+| `src/Live/` | live UI backend: minimal API, SSE feed, silo per lane, `Inspector.cs` |
+| `live/web/` | live UI page (React, Vite) |
+| `live/compose.yml`, `live/Dockerfile`, `live/emulator.json`, `live/smoke.sh` | live UI stack and smoke test |
+| `docs/live-ui-*.png` | live UI screenshots |
 | `results/` | output of the last `./run-all.sh` |
