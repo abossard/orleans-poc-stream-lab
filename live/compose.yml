@@ -1,0 +1,44 @@
+# Live UI: one backend per Orleans version, each with its own Event Hub (1 partition), plus the emulator and Azurite.
+#   cd live && docker compose up --build     then open http://localhost:8031
+# Only the two backends publish host ports; the emulator and Azurite stay on the compose network.
+name: orleans-poc-4006-ui
+
+x-backend: &backend
+  build: &build
+    context: ..
+    dockerfile: live/Dockerfile
+  depends_on: [emulator, azurite]
+  restart: unless-stopped
+
+# Well-known local emulator and Azurite development credentials, not secrets.
+x-env: &env
+  EVENTHUB_CONNECTION: Endpoint=sb://emulator;SharedAccessKeyName=RootManageSharedAccessKey;SharedAccessKey=SAS_KEY_VALUE;UseDevelopmentEmulator=true;
+  AZURITE_CONNECTION: DefaultEndpointsProtocol=http;AccountName=devstoreaccount1;AccountKey=Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==;TableEndpoint=http://azurite:10002/devstoreaccount1;
+
+services:
+  live-1021:
+    <<: *backend
+    container_name: poc4006ui-live-1021
+    build: { <<: *build, args: { ORLEANS_VERSION: 10.2.1 } }
+    environment: { <<: *env, EVENTHUB_NAME: poc-hub-1021 }
+    ports: ["8021:8080"]
+  live-1031:
+    <<: *backend
+    container_name: poc4006ui-live-1031
+    build: { <<: *build, args: { ORLEANS_VERSION: 10.3.1 } }
+    environment: { <<: *env, EVENTHUB_NAME: poc-hub-1031 }
+    ports: ["8031:8080"]
+  emulator:
+    container_name: poc4006ui-emulator
+    image: mcr.microsoft.com/azure-messaging/eventhubs-emulator:latest
+    volumes:
+      - ./emulator.json:/Eventhubs_Emulator/ConfigFiles/Config.json
+    environment:
+      BLOB_SERVER: azurite
+      METADATA_SERVER: azurite
+      ACCEPT_EULA: "Y"
+    depends_on: [azurite]
+  azurite:
+    container_name: poc4006ui-azurite
+    image: mcr.microsoft.com/azure-storage/azurite:latest
+    command: azurite --blobHost 0.0.0.0 --queueHost 0.0.0.0 --tableHost 0.0.0.0 --skipApiVersionCheck
