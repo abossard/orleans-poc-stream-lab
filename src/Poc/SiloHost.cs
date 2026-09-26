@@ -62,11 +62,11 @@ public static class Timings
 public static class EventHubEmulator
 {
     // Well-known emulator credentials, see https://learn.microsoft.com/azure/event-hubs/test-locally-with-event-hub-emulator
-    public const string ConnectionString =
+    public static readonly string ConnectionString = Environment.GetEnvironmentVariable("EVENTHUB_CONNECTION") ??
         "Endpoint=sb://localhost;SharedAccessKeyName=RootManageSharedAccessKey;SharedAccessKey=SAS_KEY_VALUE;UseDevelopmentEmulator=true;";
-    public const string EventHubName = "poc-hub";
+    public static readonly string EventHubName = Environment.GetEnvironmentVariable("EVENTHUB_NAME") ?? "poc-hub";
     public const string ConsumerGroup = "orleans";
-    public const string AzuriteConnectionString = "UseDevelopmentStorage=true";
+    public static readonly string AzuriteConnectionString = Environment.GetEnvironmentVariable("AZURITE_CONNECTION") ?? "UseDevelopmentStorage=true";
     public const string CheckpointTable = "pocCheckpoints";
 }
 

@@ -11,12 +11,18 @@ public sealed class Timeline
     private readonly List<Entry> entries = [];
     private readonly Stopwatch clock = Stopwatch.StartNew();
 
+    public event Action<Entry>? Added;
+
     public void Add(string source, string grain, string kind, string detail = "", int? version = null)
     {
+        Entry entry;
         lock (gate)
         {
-            entries.Add(new Entry(Math.Round(clock.Elapsed.TotalSeconds, 3), source, grain, kind, detail, version));
+            entry = new Entry(Math.Round(clock.Elapsed.TotalSeconds, 3), source, grain, kind, detail, version);
+            entries.Add(entry);
         }
+
+        Added?.Invoke(entry);
     }
 
     public void Restart()

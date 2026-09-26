@@ -72,16 +72,17 @@ public sealed class Scenarios(string transport, Version orleansVersion, string l
     // 10.3.x wires the Event Hub cursor's Refresh to PooledQueueCache.Refresh; the memory cursor's Refresh is a no-op in both versions.
     private bool IdleCursorRefreshes => transport == "eventhub" && !HandshakeReportsMiss;
 
-    public async Task<ScenarioResult> Run(string id, int portOffset)
+    public async Task<ScenarioResult> Run(string id, int portOffset, Timeline? timeline = null, Action<IServiceProvider>? started = null)
     {
         var variant = Find(id);
-        var timeline = new Timeline();
+        timeline ??= new Timeline();
         var suffix = Guid.NewGuid().ToString("N")[..6];
         var serviceId = $"poc{orleansVersion.ToString().Replace(".", "")}{transport}{id.Replace("-", "")}{suffix}";
         await using var logFile = new StreamWriter(Path.Combine(logDir, $"{orleansVersion}-{transport}-{id}.log")) { AutoFlush = true };
         // PooledQueueCache only throws QueueCacheMissException once it has also forgotten the stream's last purged token.
         using var host = SiloHost.Build(transport, timeline, serviceId, portOffset, variant.DataMaxAgeInCache, variant.MetadataMinTimeInCache, logFile);
         await host.StartAsync();
+        started?.Invoke(host.Services);
         try
         {
             using var cache = new CacheStats();
@@ -122,7 +123,7 @@ public sealed class Scenarios(string transport, Version orleansVersion, string l
     }
 
     // The receiver may start reading slightly after "now" (Event Hub StartFromNow), so prove the pipeline is live first.
-    private static async Task WarmUp(IClusterClient client, Timeline timeline, string suffix)
+    public static async Task WarmUp(IClusterClient client, Timeline timeline, string suffix)
     {
         var key = $"warmup-{suffix}";
         var grain = client.GetGrain<IConsumerGrain>(key);
@@ -239,7 +240,7 @@ public sealed class Scenarios(string transport, Version orleansVersion, string l
 
     private static void Step(Timeline timeline, string key, string text) => timeline.Add("driver", key, "Step", text);
 
-    private static async Task RunFillers(IStreamProvider streams, string suffix, Timeline timeline, CancellationToken ct)
+    public static async Task RunFillers(IStreamProvider streams, string suffix, Timeline timeline, CancellationToken ct)
     {
         var stream = streams.GetStream<Payload>(StreamId.Create(Names.FillerNamespace, suffix));
         var count = 0;

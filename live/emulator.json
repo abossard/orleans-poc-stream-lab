@@ -1,0 +1,17 @@
+{
+  "UserConfig": {
+    "NamespaceConfig": [
+      {
+        "Type": "EventHub",
+        "Name": "emulatorNs1",
+        "Entities": [
+          { "Name": "poc-hub-1021", "PartitionCount": 1, "ConsumerGroups": [{ "Name": "orleans" }] },
+          { "Name": "poc-hub-1031", "PartitionCount": 1, "ConsumerGroups": [{ "Name": "orleans" }] }
+        ]
+      }
+    ],
+    "LoggingConfig": {
+      "Type": "File"
+    }
+  }
+}

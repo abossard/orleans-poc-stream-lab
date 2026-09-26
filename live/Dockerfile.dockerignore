@@ -1,0 +1,7 @@
+.git
+artifacts
+results
+**/node_modules
+**/dist
+**/bin
+**/obj
