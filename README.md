@@ -11,6 +11,7 @@ Terms: a `StreamSequenceToken` is a stream position. For Event Hub it is an `Eve
 - **Purge metadata matters, scenario D.** `PooledQueueCache` remembers the last purged token per stream for `MetadataMinTimeInCache` (default 10 min). While it does, a stale token resumes at the oldest cached message without throwing. Prod's 30 min `StreamInactivityPeriod` is longer than that, so the metadata was always gone by the time the handshake ran.
 - **Idle-cursor path (`RunConsumerCursor`), scenario E. This is a real loss on 10.2.1.** S is still registered, but it was quiet for longer than `MetadataMinTimeInCache` and shorter than `StreamInactivityPeriod`. Its idle cursor still points at an evicted position. On 10.2.1 the next event throws `QueueCacheMissException` in `RunConsumerCursor`. The cursor then jumps to the newest message, so **event 2 is skipped**. On 10.3.1 with Event Hub, `EventHubAdapterReceiver.Cursor.Refresh` calls `PooledQueueCache.Refresh`, which moves the idle cursor to the new event: no error and no loss. Memory streams still lose the event on 10.3.1 because their cursor `Refresh` does nothing.
 - **Genuine mid-stream miss, scenario C.** A slow consumer falls behind the cache. Both versions call `OnErrorAsync(QueueCacheMissException)` and skip the evicted events.
+- **A bigger `DataMaxAgeInCache` would not have fixed #4006, variants A-mid, E-mid, A-big, E-big, A-meta, E-meta, C-big.** Doubling it (still shorter than the quiet period) gives the same errors and the same loss as A and E. Only a cache longer than the quiet period avoids them, at a proportional cost in cached messages. A longer `MetadataMinTimeInCache` avoids both paths without growing the cache. A bigger cache does help a genuinely slow consumer (C-big). See [Would a bigger cache have helped?](#would-a-bigger-cache-have-helped).
 
 ## How to run
 
@@ -18,9 +19,10 @@ Requires the .NET 10 SDK and Docker (only for the Event Hub transport).
 
 ```bash
 open -a Docker                          # if the daemon is not running
-./run-all.sh                            # 5 scenarios x {10.2.1, 10.3.1} x {memory, eventhub}, about 12 min
+./run-all.sh                            # 12 scenarios x {10.2.1, 10.3.1} x {memory, eventhub}, about 24 min
 TRANSPORTS=memory ./run-all.sh          # no Docker needed
 VERSIONS=10.2.1 TRANSPORTS=eventhub SCENARIOS=A,E ./run-all.sh
+SCENARIOS=A-mid,E-mid,A-big,E-big,A-meta,E-meta,C-big ./run-all.sh   # cache-size variants only, about 14 min
 docker compose down                     # stop the emulator and Azurite
 ```
 
@@ -42,17 +44,18 @@ Output: `results/<version>-<transport>.json` and `.md` (full callback timeline p
 | Keep-alive | driver calls `grain.Ping()` every 3 s | discovery `GetConfig()` every 5 min |
 | Other traffic on the partition | 1 filler event every 500 ms on `filler/<id>` (no consumer), 1 partition | other entities hashed to the same partition |
 | Stream provider | `AddMemoryStreams` or `AddEventHubStreams` (emulator + Azure Table checkpointer on Azurite), `StreamPubSubType.ImplicitOnly` | `Silo/Program.cs` L190-245 |
-| `DataMinTimeInCache` / `DataMaxAgeInCache` | 1 s / 3 s | 10 s / 30 s |
-| `MetadataMinTimeInCache` | 5 s (scenario D: 10 min default) | 10 min default |
+| `DataMinTimeInCache` / `DataMaxAgeInCache` | 1 s / 3 s (`-mid`: 6 s, `-big`: 40 s) | 10 s / 30 s |
+| `MetadataMinTimeInCache` | 5 s (D: 10 min default, `-meta`: 40 s) | 10 min default |
 | `StreamInactivityPeriod` (cleanup every 1/10) | 20 s | 30 min default |
 | `CollectionAge` / `CollectionQuantum` | 10 s / 2 s | 15 min / 1 min defaults |
-| Quiet period before event 2 | A, B, D: 26 s (longer than `StreamInactivityPeriod` + cleanup). E: 12 s (longer than eviction + metadata, shorter than `StreamInactivityPeriod`) | 30+ min (A), 10-30 min (E) |
+| Quiet period before event 2 | A, B, D and `A-*`: 26 s (longer than `StreamInactivityPeriod` + cleanup). E, `E-big`, `E-meta`: 12 s (longer than eviction + metadata, shorter than `StreamInactivityPeriod`). `E-mid`: 17 s (same rule with the 6 s cache) | 30+ min (A), 10-30 min (E) |
+| Cache stats | `MeterListener` on `orleans-streams-queue-cache-length` / `-size` (`DefaultCacheMonitor`), `StatisticMonitorWriteInterval` 1 s | same instruments, 5 min default |
 
 A silo-side `IIncomingGrainCallFilter` (`HandshakeProbe`) records what `GetSequenceToken()` returns during the handshake, and pulling-agent log lines about S (`Got back 1 subscribers for stream ...`) go into the timeline as evidence of (re)registration.
 
 ## Results
 
-All 20 runs matched the expectations coded in `src/Poc/Scenarios.cs` (full table with expectations: [results/summary.md](results/summary.md)).
+All 48 runs (12 scenarios x 2 versions x 2 transports) matched the expectations coded in `src/Poc/Scenarios.cs` (full table with settings, cache stats and expectations: [results/summary.md](results/summary.md)).
 
 | Scenario | Transport | 10.2.1 OnErrorAsync | 10.2.1 delivered | 10.2.1 lost | 10.3.1 OnErrorAsync | 10.3.1 delivered | 10.3.1 lost |
 |---|---|---|---|---:|---|---|---:|
@@ -68,6 +71,35 @@ All 20 runs matched the expectations coded in `src/Poc/Scenarios.cs` (full table
 | E idle cursor (`RunConsumerCursor`) | memory | 1 x QueueCacheMissException | 1/2 | 1 | 1 x QueueCacheMissException | 1/2 | 1 |
 
 "OnErrorAsync" is the count on S's grain, with exception type. "Delivered" and "Lost" are the published versions seen or missing in `OnNextAsync`.
+
+### Cache-size variants
+
+Each cell is OnErrorAsync / delivered / lost (QCME = `QueueCacheMissException`). Settings in seconds. "Max cached" is the peak `orleans-streams-queue-cache-length` on the single partition, 10.2.1 / 10.3.1. The partition carries about 2 events/s.
+
+| Scenario | Transport | `DataMaxAgeInCache` | `MetadataMinTimeInCache` | Quiet | 10.2.1 | 10.3.1 | Max cached |
+|---|---|---:|---:|---:|---|---|---|
+| A (baseline) | eventhub | 3 | 5 | 26 | 1 x QCME / 2 of 2 / 0 | 0 / 2 of 2 / 0 | 9 / 9 |
+| A (baseline) | memory | 3 | 5 | 26 | 1 x QCME / 2 of 2 / 0 | 0 / 2 of 2 / 0 | 9 / 9 |
+| A-mid | eventhub | 6 | 5 | 26 | 1 x QCME / 2 of 2 / 0 | 0 / 2 of 2 / 0 | 15 / 15 |
+| A-mid | memory | 6 | 5 | 26 | 1 x QCME / 2 of 2 / 0 | 0 / 2 of 2 / 0 | 15 / 15 |
+| A-big | eventhub | 40 | 5 | 26 | 0 / 2 of 2 / 0 | 0 / 2 of 2 / 0 | 60 / 60 |
+| A-big | memory | 40 | 5 | 26 | 0 / 2 of 2 / 0 | 0 / 2 of 2 / 0 | 62 / 61 |
+| A-meta | eventhub | 3 | 40 | 26 | 0 / 2 of 2 / 0 | 0 / 2 of 2 / 0 | 9 / 9 |
+| A-meta | memory | 3 | 40 | 26 | 0 / 2 of 2 / 0 | 0 / 2 of 2 / 0 | 9 / 9 |
+| E (baseline) | eventhub | 3 | 5 | 12 | 1 x QCME / 1 of 2 / 1 | 0 / 2 of 2 / 0 | 9 / 9 |
+| E (baseline) | memory | 3 | 5 | 12 | 1 x QCME / 1 of 2 / 1 | 1 x QCME / 1 of 2 / 1 | 9 / 9 |
+| E-mid | eventhub | 6 | 5 | 17 | 1 x QCME / 1 of 2 / 1 | 0 / 2 of 2 / 0 | 15 / 15 |
+| E-mid | memory | 6 | 5 | 17 | 1 x QCME / 1 of 2 / 1 | 1 x QCME / 1 of 2 / 1 | 14 / 15 |
+| E-big | eventhub | 40 | 5 | 12 | 0 / 2 of 2 / 0 | 0 / 2 of 2 / 0 | 32 / 32 |
+| E-big | memory | 40 | 5 | 12 | 0 / 2 of 2 / 0 | 0 / 2 of 2 / 0 | 33 / 33 |
+| E-meta | eventhub | 3 | 40 | 12 | 0 / 2 of 2 / 0 | 0 / 2 of 2 / 0 | 9 / 9 |
+| E-meta | memory | 3 | 40 | 12 | 0 / 2 of 2 / 0 | 0 / 2 of 2 / 0 | 9 / 9 |
+| C (baseline) | eventhub | 3 | 5 | | 2 x QCME / 1 of 21 / 20 | 1 x QCME / 2 of 21 / 19 | 28 / 28 |
+| C (baseline) | memory | 3 | 5 | | 2 x QCME / 1 of 21 / 20 | 2 x QCME / 1 of 21 / 20 | 27 / 28 |
+| C-big | eventhub | 40 | 5 | | 0 / 21 of 21 / 0 | 0 / 21 of 21 / 0 | 47 / 47 |
+| C-big | memory | 40 | 5 | | 0 / 21 of 21 / 0 | 0 / 21 of 21 / 0 | 48 / 48 |
+
+`orleans-streams-queue-cache-size` reported 1,048,576 bytes in every run: the pool allocates 1 MB blocks and PoC volumes never need a second block. At prod volume the cost is cached messages x serialized message size, rounded up to 1 MB blocks.
 
 ## Key log excerpts
 
@@ -106,6 +138,18 @@ E on 10.3.1: the idle cursor is refreshed to event 2.
 12.154 grain         OnNextAsync 2 token=EventHubSequenceToken(EventHubOffset: 137272, SequenceNumber: 782, EventIndex: 0)
 ```
 
+A-mid vs A-big on 10.2.1 Event Hub: same handshake, same stale `expectedToken`. With a 6 s cache the token is gone; with a 40 s cache it is still one of the 53 cached messages.
+
+```text
+A-mid  26.114 driver        publish event 2 on S via grain.Update(2); cache holds 13 messages
+A-mid  26.151 agent->grain  GetSequenceToken returned DeliveryToken(EventHubSequenceToken(EventHubOffset: 60576, SequenceNumber: 348, EventIndex: 0))
+A-mid  26.152 grain         OnErrorAsync Orleans.Streams.QueueCacheMissException: Item not found in cache.  Requested: EventHubSequenceToken(EventHubOffset: 60576, SequenceNumber: 348, EventIndex: 0), Low: EventHubSequenceToken(EventHubOffset: , SequenceNumber: 388, EventIndex: 0), ...
+A-mid  26.152 grain         OnNextAsync 2 token=EventHubSequenceToken(EventHubOffset: 69560, SequenceNumber: 399, EventIndex: 0)
+A-big  26.113 driver        publish event 2 on S via grain.Update(2); cache holds 53 messages
+A-big  26.146 agent->grain  GetSequenceToken returned DeliveryToken(EventHubSequenceToken(EventHubOffset: 89320, SequenceNumber: 511, EventIndex: 0))
+A-big  26.146 grain         OnNextAsync 2 token=EventHubSequenceToken(EventHubOffset: 98304, SequenceNumber: 562, EventIndex: 0)
+```
+
 ## Hypothesis check
 
 | Step | Verdict | Evidence |
@@ -141,12 +185,37 @@ How to tell the two paths apart in logs: the handshake path's `Requested` token 
 - The emulator reproduces the prod error text, for example `Requested: EventHubSequenceToken(EventHubOffset: 31984, SequenceNumber: 187, ...), Low: EventHubSequenceToken(EventHubOffset: , SequenceNumber: 232, ...)` (scenario A, 10.2.1).
 - The Event Hubs emulator image runs natively on arm64 (no `platform` override needed).
 
+## Would a bigger cache have helped?
+
+Not at any practical size. The variants confirm the two conditions from the source above:
+
+- Handshake noise (path A) needs the grain alive and a quiet period longer than both `StreamInactivityPeriod` and `DataMaxAgeInCache + MetadataMinTimeInCache` (the metadata entry is dropped between 1x and 1.2x `MetadataMinTimeInCache` after the purge, [PooledQueueCache.cs v10.2.1 L97-101](https://github.com/dotnet/orleans/blob/v10.2.1/src/Orleans.Streaming/Common/PooledCache/PooledQueueCache.cs#L97-L101)).
+- The idle-cursor loss (path E) happens when `DataMaxAgeInCache + MetadataMinTimeInCache` < quiet < `StreamInactivityPeriod` (+ cleanup every `StreamInactivityPeriod / 10`).
+
+Mapped to prod (`DataMaxAgeInCache` 30 s, `MetadataMinTimeInCache` 10 min, `StreamInactivityPeriod` 30 min, `GetConfig()` every 5 min keeps grains alive indefinitely):
+
+| Prod setting | Handshake noise (A) | Idle-cursor loss window (E, 10.2.1 Event Hub) | Cached messages per partition | PoC evidence |
+|---|---|---|---|---|
+| As deployed: `DataMaxAgeInCache` 30 s | every live entity quiet for more than ~30 min | quiet ~10.5-12.5 min to ~30-33 min | rate x 30 s | A, E |
+| `DataMaxAgeInCache` 2-5 min | unchanged | ~12-17 min to ~30-33 min, only slightly shorter | 4-10x | A-mid, E-mid: same errors, same loss |
+| `DataMaxAgeInCache` about 23 min or more (with the 10 min metadata that covers `StreamInactivityPeriod` + cleanup) | still for entities quiet for more than ~33-35 min | closed | about 46x | derived from the rule: E-big (token still cached) and E-meta (metadata still present) cover the two halves |
+| `DataMaxAgeInCache` longer than the longest time an entity stays unchanged (hours to days) | gone | closed | hundreds to thousands x | A-big, E-big |
+| `MetadataMinTimeInCache` about 33 min or more, `DataMaxAgeInCache` 30 s | only for entities quiet for more than `MetadataMinTimeInCache` | closed | unchanged, plus one `lastPurgedToken` entry per stream (not per message) | E-meta, A-meta, D |
+| Orleans 10.3.1 (current prod), no config change | not reported: resume at `cacheToken` | closed on Event Hub: `Cursor.Refresh` | unchanged | A, A-mid, E, E-mid on 10.3.1 eventhub |
+
+- A moderate increase (A-mid, E-mid) changes nothing that matters. The token is still evicted long before the next event, and the E window only moves by the added minutes.
+- A cache long enough to hold the token (A-big, E-big) does avoid both paths, but the cached messages grow linearly with `DataMaxAgeInCache` (measured peak: 9 at 3 s, 15 at 6 s, 60 at 40 s after a 29 s run, still rising). For the noise it must be longer than any quiet period, and that has no upper bound because the grains never idle out.
+- `MetadataMinTimeInCache` is the cheap 10.2.1 knob. It keeps one `(StreamId, token)` entry per stream ([PooledQueueCache.cs v10.2.1 L38](https://github.com/dotnet/orleans/blob/v10.2.1/src/Orleans.Streaming/Common/PooledCache/PooledQueueCache.cs#L38), [L154-166](https://github.com/dotnet/orleans/blob/v10.2.1/src/Orleans.Streaming/Common/PooledCache/PooledQueueCache.cs#L154-L166)), so E-meta and A-meta avoid both paths while the cache still holds 9 messages. It also fixes path E on memory streams in 10.3.1, which Orleans itself does not.
+- A bigger cache does help genuine lag: C-big delivers 21 of 21 on both versions. The prod analysis found no lag (average grain call 133 ms, no 429s), so that is not what #4006 was.
+- The real fix is Orleans 10.3.1: on Event Hub it removes the handshake noise and the idle-cursor loss without any cache change.
+
 ## Files
 
 | Path | What |
 |---|---|
 | `src/Poc/ConsumerGrain.cs` | consumer grain (mirrors `EntityConfigGrain`), `HandshakeProbe` call filter |
-| `src/Poc/Scenarios.cs` | scenarios A-E, expectations, evaluation |
+| `src/Poc/Scenarios.cs` | scenario table (A-E and cache-size variants), expectations, evaluation |
+| `src/Poc/CacheStats.cs` | samples pooled cache message count and size from the Orleans cache monitor instruments |
 | `src/Poc/SiloHost.cs` | silo config per transport, scaled timings |
 | `src/Poc/Timeline.cs`, `TimelineLoggerProvider.cs` | callback log the driver asserts on, silo log capture |
 | `src/Poc/Report.cs`, `Program.cs` | JSON/markdown output, CLI |
