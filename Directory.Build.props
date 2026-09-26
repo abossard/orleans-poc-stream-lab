@@ -1,0 +1,10 @@
+<Project>
+  <PropertyGroup>
+    <!-- Switch with -p:OrleansVersion=10.2.1 or -p:OrleansVersion=10.3.1 -->
+    <OrleansVersion Condition="'$(OrleansVersion)' == ''">10.3.1</OrleansVersion>
+    <!-- One output tree per Orleans version, outside the project folder so builds do not see each other's generated files -->
+    <BaseOutputPath>$(MSBuildThisFileDirectory)artifacts/$(OrleansVersion)/bin/</BaseOutputPath>
+    <BaseIntermediateOutputPath>$(MSBuildThisFileDirectory)artifacts/$(OrleansVersion)/obj/</BaseIntermediateOutputPath>
+    <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
+  </PropertyGroup>
+</Project>
