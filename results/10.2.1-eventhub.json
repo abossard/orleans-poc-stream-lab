@@ -6,7 +6,7 @@
     "Orleans.Streaming.EventHubs": "10.2.1"
   },
   "Transport": "eventhub",
-  "StartedUtc": "2026-09-26T10:31:09.804267Z",
+  "StartedUtc": "2026-09-28T13:27:22.194842Z",
   "Timings": {
     "DataMinTimeInCache": 1,
     "DataMaxAgeInCache": 3,
@@ -29,7 +29,7 @@
   "Scenarios": [
     {
       "Id": "A",
-      "Title": "Handshake path: grain kept alive by Ping, agent forgets S, S\u0027s token and its purge metadata are evicted",
+      "Title": "Handshake path: the agent forgets the quiet stream while Ping keeps the grain active",
       "Expected": "1 x OnErrorAsync(QueueCacheMissException) at the handshake, then OnNextAsync(2); nothing lost; 1 activation",
       "Observed": "1 x OnErrorAsync(QueueCacheMissException); delivered [1,2]; lost []; 1 activation(s)",
       "Pass": true,
@@ -53,37 +53,37 @@
           "Source": "driver",
           "Grain": "",
           "Kind": "Fillers",
-          "Detail": "start: 1 event every 500 ms on filler/5b937d (same partition, no consumer)",
+          "Detail": "other stream filler/4eef31: 1 event every 500 ms on the same partition, no consumer",
           "Version": null
         },
         {
           "T": 0.001,
           "Source": "driver",
-          "Grain": "a-5b937d",
+          "Grain": "a-4eef31",
           "Kind": "Step",
-          "Detail": "S = consumer/a-5b937d, DataMaxAgeInCache = 3s, MetadataMinTimeInCache = 5s",
+          "Detail": "stream consumer/a-4eef31, DataMaxAgeInCache 3 s, MetadataMinTimeInCache 5 s",
           "Version": null
         },
         {
           "T": 0.002,
           "Source": "driver",
-          "Grain": "a-5b937d",
+          "Grain": "a-4eef31",
           "Kind": "Step",
-          "Detail": "publish event 1 on S via grain.Update(1)",
+          "Detail": "grain.Update(1) publishes event 1",
           "Version": null
         },
         {
           "T": 0.003,
           "Source": "grain",
-          "Grain": "a-5b937d",
+          "Grain": "a-4eef31",
           "Kind": "Activated",
           "Detail": "",
           "Version": null
         },
         {
-          "T": 0.015,
+          "T": 0.013,
           "Source": "grain",
-          "Grain": "a-5b937d",
+          "Grain": "a-4eef31",
           "Kind": "Published",
           "Detail": "",
           "Version": 1
@@ -93,107 +93,107 @@
           "Source": "agent",
           "Grain": "",
           "Kind": "AgentLog",
-          "Detail": "Got back 1 subscribers for stream poc/consumer/a-5b937d.",
+          "Detail": "Got back 1 subscribers for stream poc/consumer/a-4eef31.",
           "Version": null
         },
         {
-          "T": 0.032,
+          "T": 0.033,
           "Source": "agent-\u003Egrain",
-          "Grain": "a-5b937d",
+          "Grain": "a-4eef31",
           "Kind": "GetSequenceToken",
           "Detail": "returned null (no expectedToken)",
           "Version": null
         },
         {
-          "T": 0.032,
+          "T": 0.033,
           "Source": "grain",
-          "Grain": "a-5b937d",
+          "Grain": "a-4eef31",
           "Kind": "OnSubscribed",
           "Detail": "",
           "Version": null
         },
         {
-          "T": 0.032,
+          "T": 0.033,
           "Source": "grain",
-          "Grain": "a-5b937d",
+          "Grain": "a-4eef31",
           "Kind": "OnNextAsync",
-          "Detail": "token=EventHubSequenceToken(EventHubOffset: 344, SequenceNumber: 2, EventIndex: 0)",
+          "Detail": "token=EventHubSequenceToken(EventHubOffset: 237960, SequenceNumber: 1353, EventIndex: 0)",
           "Version": 1
         },
         {
-          "T": 0.118,
+          "T": 0.116,
           "Source": "driver",
-          "Grain": "a-5b937d",
+          "Grain": "a-4eef31",
           "Kind": "Step",
-          "Detail": "quiet period 26s: no events on S, fillers keep the partition moving, Ping=every 3s",
+          "Detail": "quiet for 26 s while other streams keep publishing, Ping() every 3 s keeps the grain active",
           "Version": null
         },
         {
-          "T": 11.216,
+          "T": 11.343,
           "Source": "grain",
-          "Grain": "warmup-5b937d",
+          "Grain": "warmup-4eef31",
           "Kind": "Deactivated",
           "Detail": "ActivationIdle",
           "Version": null
         },
         {
-          "T": 26.119,
+          "T": 26.116,
           "Source": "driver",
-          "Grain": "a-5b937d",
+          "Grain": "a-4eef31",
           "Kind": "Step",
-          "Detail": "publish event 2 on S via grain.Update(2); cache holds 7 messages",
+          "Detail": "grain.Update(2) publishes event 2, the cache holds 7 messages",
           "Version": null
         },
         {
-          "T": 26.13,
+          "T": 26.132,
           "Source": "grain",
-          "Grain": "a-5b937d",
+          "Grain": "a-4eef31",
           "Kind": "Published",
           "Detail": "",
           "Version": 2
         },
         {
-          "T": 26.151,
+          "T": 26.153,
           "Source": "agent",
           "Grain": "",
           "Kind": "AgentLog",
-          "Detail": "Got back 1 subscribers for stream poc/consumer/a-5b937d.",
+          "Detail": "Got back 1 subscribers for stream poc/consumer/a-4eef31.",
           "Version": null
         },
         {
-          "T": 26.152,
+          "T": 26.156,
           "Source": "agent-\u003Egrain",
-          "Grain": "a-5b937d",
+          "Grain": "a-4eef31",
           "Kind": "GetSequenceToken",
-          "Detail": "returned DeliveryToken(EventHubSequenceToken(EventHubOffset: 344, SequenceNumber: 2, EventIndex: 0))",
+          "Detail": "returned DeliveryToken(EventHubSequenceToken(EventHubOffset: 237960, SequenceNumber: 1353, EventIndex: 0))",
           "Version": null
         },
         {
-          "T": 26.154,
+          "T": 26.161,
           "Source": "grain",
-          "Grain": "a-5b937d",
+          "Grain": "a-4eef31",
           "Kind": "OnErrorAsync",
-          "Detail": "Orleans.Streams.QueueCacheMissException: Item not found in cache.  Requested: EventHubSequenceToken(EventHubOffset: 344, SequenceNumber: 2, EventIndex: 0), Low: EventHubSequenceToken(EventHubOffset: , SequenceNumber: 47, EventIndex: 0), High: EventHubSequenceToken(EventHubOffset: , SequenceNumber: 53, EventIndex: 0)",
+          "Detail": "Orleans.Streams.QueueCacheMissException: Item not found in cache.  Requested: EventHubSequenceToken(EventHubOffset: 237960, SequenceNumber: 1353, EventIndex: 0), Low: EventHubSequenceToken(EventHubOffset: , SequenceNumber: 1398, EventIndex: 0), High: EventHubSequenceToken(EventHubOffset: , SequenceNumber: 1404, EventIndex: 0)",
           "Version": null
         },
         {
-          "T": 26.155,
+          "T": 26.163,
           "Source": "grain",
-          "Grain": "a-5b937d",
+          "Grain": "a-4eef31",
           "Kind": "OnNextAsync",
-          "Detail": "token=EventHubSequenceToken(EventHubOffset: 8912, SequenceNumber: 53, EventIndex: 0)",
+          "Detail": "token=EventHubSequenceToken(EventHubOffset: 246936, SequenceNumber: 1404, EventIndex: 0)",
           "Version": 2
         },
         {
-          "T": 29.232,
+          "T": 29.24,
           "Source": "driver",
-          "Grain": "a-5b937d",
+          "Grain": "a-4eef31",
           "Kind": "Step",
-          "Detail": "pinged 9 times",
+          "Detail": "9 Ping() calls",
           "Version": null
         },
         {
-          "T": 29.235,
+          "T": 29.248,
           "Source": "driver",
           "Grain": "",
           "Kind": "Fillers",
@@ -211,7 +211,7 @@
     },
     {
       "Id": "B",
-      "Title": "Control: as A, but the grain is idle-collected (no Ping), so the new activation has no expectedToken",
+      "Title": "As A, but without Ping, so Orleans removes the idle grain",
       "Expected": "no OnErrorAsync (GetSequenceToken returns null), OnNextAsync(2); nothing lost; 2 activations",
       "Observed": "0 x OnErrorAsync; delivered [1,2]; lost []; 2 activation(s)",
       "Pass": true,
@@ -229,163 +229,163 @@
       "Activations": 2,
       "Timeline": [
         {
-          "T": 0,
+          "T": 0.001,
           "Source": "driver",
           "Grain": "",
           "Kind": "Fillers",
-          "Detail": "start: 1 event every 500 ms on filler/0c82ff (same partition, no consumer)",
-          "Version": null
-        },
-        {
-          "T": 0,
-          "Source": "driver",
-          "Grain": "b-0c82ff",
-          "Kind": "Step",
-          "Detail": "S = consumer/b-0c82ff, DataMaxAgeInCache = 3s, MetadataMinTimeInCache = 5s",
-          "Version": null
-        },
-        {
-          "T": 0,
-          "Source": "driver",
-          "Grain": "b-0c82ff",
-          "Kind": "Step",
-          "Detail": "publish event 1 on S via grain.Update(1)",
+          "Detail": "other stream filler/da381f: 1 event every 500 ms on the same partition, no consumer",
           "Version": null
         },
         {
           "T": 0.001,
+          "Source": "driver",
+          "Grain": "b-da381f",
+          "Kind": "Step",
+          "Detail": "stream consumer/b-da381f, DataMaxAgeInCache 3 s, MetadataMinTimeInCache 5 s",
+          "Version": null
+        },
+        {
+          "T": 0.001,
+          "Source": "driver",
+          "Grain": "b-da381f",
+          "Kind": "Step",
+          "Detail": "grain.Update(1) publishes event 1",
+          "Version": null
+        },
+        {
+          "T": 0.002,
           "Source": "grain",
-          "Grain": "b-0c82ff",
+          "Grain": "b-da381f",
           "Kind": "Activated",
           "Detail": "",
           "Version": null
         },
         {
-          "T": 0.016,
+          "T": 0.023,
           "Source": "grain",
-          "Grain": "b-0c82ff",
+          "Grain": "b-da381f",
           "Kind": "Published",
           "Detail": "",
           "Version": 1
         },
         {
-          "T": 0.034,
+          "T": 0.039,
           "Source": "agent",
           "Grain": "",
           "Kind": "AgentLog",
-          "Detail": "Got back 1 subscribers for stream poc/consumer/b-0c82ff.",
+          "Detail": "Got back 1 subscribers for stream poc/consumer/b-da381f.",
           "Version": null
         },
         {
-          "T": 0.034,
+          "T": 0.039,
           "Source": "agent-\u003Egrain",
-          "Grain": "b-0c82ff",
+          "Grain": "b-da381f",
           "Kind": "GetSequenceToken",
           "Detail": "returned null (no expectedToken)",
           "Version": null
         },
         {
-          "T": 0.034,
+          "T": 0.039,
           "Source": "grain",
-          "Grain": "b-0c82ff",
+          "Grain": "b-da381f",
           "Kind": "OnSubscribed",
           "Detail": "",
           "Version": null
         },
         {
-          "T": 0.034,
+          "T": 0.04,
           "Source": "grain",
-          "Grain": "b-0c82ff",
+          "Grain": "b-da381f",
           "Kind": "OnNextAsync",
-          "Detail": "token=EventHubSequenceToken(EventHubOffset: 10608, SequenceNumber: 63, EventIndex: 0)",
+          "Detail": "token=EventHubSequenceToken(EventHubOffset: 248712, SequenceNumber: 1414, EventIndex: 0)",
           "Version": 1
         },
         {
-          "T": 0.117,
+          "T": 0.124,
           "Source": "driver",
-          "Grain": "b-0c82ff",
+          "Grain": "b-da381f",
           "Kind": "Step",
-          "Detail": "quiet period 26s: no events on S, fillers keep the partition moving, Ping=off",
+          "Detail": "quiet for 26 s while other streams keep publishing, no Ping()",
           "Version": null
         },
         {
-          "T": 12.787,
+          "T": 12.794,
           "Source": "grain",
-          "Grain": "b-0c82ff",
+          "Grain": "b-da381f",
           "Kind": "Deactivated",
           "Detail": "ActivationIdle",
           "Version": null
         },
         {
-          "T": 20.788,
+          "T": 20.794,
           "Source": "grain",
-          "Grain": "warmup-0c82ff",
+          "Grain": "warmup-da381f",
           "Kind": "Deactivated",
           "Detail": "ActivationIdle",
           "Version": null
         },
         {
-          "T": 26.118,
+          "T": 26.125,
           "Source": "driver",
-          "Grain": "b-0c82ff",
+          "Grain": "b-da381f",
           "Kind": "Step",
-          "Detail": "publish event 2 on S via grain.Update(2); cache holds 7 messages",
+          "Detail": "grain.Update(2) publishes event 2, the cache holds 7 messages",
           "Version": null
         },
         {
-          "T": 26.118,
+          "T": 26.126,
           "Source": "grain",
-          "Grain": "b-0c82ff",
+          "Grain": "b-da381f",
           "Kind": "Activated",
           "Detail": "",
           "Version": null
         },
         {
-          "T": 26.128,
+          "T": 26.144,
           "Source": "grain",
-          "Grain": "b-0c82ff",
+          "Grain": "b-da381f",
           "Kind": "Published",
           "Detail": "",
           "Version": 2
         },
         {
-          "T": 26.149,
+          "T": 26.168,
           "Source": "agent",
           "Grain": "",
           "Kind": "AgentLog",
-          "Detail": "Got back 1 subscribers for stream poc/consumer/b-0c82ff.",
+          "Detail": "Got back 1 subscribers for stream poc/consumer/b-da381f.",
           "Version": null
         },
         {
-          "T": 26.15,
+          "T": 26.17,
           "Source": "agent-\u003Egrain",
-          "Grain": "b-0c82ff",
+          "Grain": "b-da381f",
           "Kind": "GetSequenceToken",
           "Detail": "returned null (no expectedToken)",
           "Version": null
         },
         {
-          "T": 26.15,
+          "T": 26.17,
           "Source": "grain",
-          "Grain": "b-0c82ff",
+          "Grain": "b-da381f",
           "Kind": "OnSubscribed",
           "Detail": "",
           "Version": null
         },
         {
-          "T": 26.15,
+          "T": 26.17,
           "Source": "grain",
-          "Grain": "b-0c82ff",
+          "Grain": "b-da381f",
           "Kind": "OnNextAsync",
-          "Detail": "token=EventHubSequenceToken(EventHubOffset: 19344, SequenceNumber: 115, EventIndex: 0)",
+          "Detail": "token=EventHubSequenceToken(EventHubOffset: 257688, SequenceNumber: 1465, EventIndex: 0)",
           "Version": 2
         },
         {
-          "T": 29.23,
+          "T": 29.256,
           "Source": "driver",
           "Grain": "",
           "Kind": "Fillers",
-          "Detail": "stopped after 58 events",
+          "Detail": "stopped after 57 events",
           "Version": null
         }
       ],
@@ -399,7 +399,7 @@
     },
     {
       "Id": "C",
-      "Title": "Genuine mid-stream miss: slow consumer while the partition moves on",
+      "Title": "Slow consumer: the cache drops events before the grain gets them",
       "Expected": "OnErrorAsync(QueueCacheMissException) on both versions and events skipped",
       "Observed": "2 x OnErrorAsync(QueueCacheMissException, QueueCacheMissException); delivered [1]; lost [2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21]; 1 activation(s)",
       "Pass": true,
@@ -463,111 +463,103 @@
           "Source": "driver",
           "Grain": "",
           "Kind": "Fillers",
-          "Detail": "start: 1 event every 500 ms on filler/dbafa4 (same partition, no consumer)",
+          "Detail": "other stream filler/19443d: 1 event every 500 ms on the same partition, no consumer",
           "Version": null
         },
         {
           "T": 0,
           "Source": "driver",
-          "Grain": "c-dbafa4",
+          "Grain": "c-19443d",
           "Kind": "Step",
-          "Detail": "S = consumer/c-dbafa4, DataMaxAgeInCache = 3s, MetadataMinTimeInCache = 5s",
+          "Detail": "stream consumer/c-19443d, DataMaxAgeInCache 3 s, MetadataMinTimeInCache 5 s",
           "Version": null
         },
         {
-          "T": 0.001,
+          "T": 0.002,
           "Source": "driver",
-          "Grain": "c-dbafa4",
+          "Grain": "c-19443d",
           "Kind": "Step",
-          "Detail": "publish events 1..20 on S; event 1 takes 6s to process",
+          "Detail": "publish events 1..20, the grain takes 6 s for event 1",
           "Version": null
         },
         {
-          "T": 0.029,
+          "T": 0.038,
           "Source": "agent",
           "Grain": "",
           "Kind": "AgentLog",
-          "Detail": "Got back 1 subscribers for stream poc/consumer/c-dbafa4.",
+          "Detail": "Got back 1 subscribers for stream poc/consumer/c-19443d.",
           "Version": null
         },
         {
-          "T": 0.03,
+          "T": 0.039,
           "Source": "grain",
-          "Grain": "c-dbafa4",
+          "Grain": "c-19443d",
           "Kind": "Activated",
           "Detail": "",
           "Version": null
         },
         {
-          "T": 0.03,
+          "T": 0.039,
           "Source": "agent-\u003Egrain",
-          "Grain": "c-dbafa4",
+          "Grain": "c-19443d",
           "Kind": "GetSequenceToken",
           "Detail": "returned null (no expectedToken)",
           "Version": null
         },
         {
-          "T": 0.03,
+          "T": 0.04,
           "Source": "grain",
-          "Grain": "c-dbafa4",
+          "Grain": "c-19443d",
           "Kind": "OnSubscribed",
           "Detail": "",
           "Version": null
         },
         {
-          "T": 0.03,
+          "T": 0.04,
           "Source": "grain",
-          "Grain": "c-dbafa4",
+          "Grain": "c-19443d",
           "Kind": "OnNextAsync",
-          "Detail": "token=EventHubSequenceToken(EventHubOffset: 21040, SequenceNumber: 125, EventIndex: 0)",
+          "Detail": "token=EventHubSequenceToken(EventHubOffset: 259464, SequenceNumber: 1475, EventIndex: 0)",
           "Version": 1
         },
         {
-          "T": 6.032,
+          "T": 6.049,
           "Source": "grain",
-          "Grain": "c-dbafa4",
+          "Grain": "c-19443d",
           "Kind": "OnErrorAsync",
-          "Detail": "Orleans.Streams.QueueCacheMissException: Item not found in cache.  Requested: EventHubSequenceToken(EventHubOffset: , SequenceNumber: 126, EventIndex: 0), Low: EventHubSequenceToken(EventHubOffset: , SequenceNumber: 150, EventIndex: 0), High: EventHubSequenceToken(EventHubOffset: , SequenceNumber: 155, EventIndex: 0)",
+          "Detail": "Orleans.Streams.QueueCacheMissException: Item not found in cache.  Requested: EventHubSequenceToken(EventHubOffset: , SequenceNumber: 1476, EventIndex: 0), Low: EventHubSequenceToken(EventHubOffset: , SequenceNumber: 1500, EventIndex: 0), High: EventHubSequenceToken(EventHubOffset: , SequenceNumber: 1505, EventIndex: 0)",
           "Version": null
         },
         {
-          "T": 10.081,
+          "T": 10.198,
           "Source": "driver",
-          "Grain": "c-dbafa4",
+          "Grain": "c-19443d",
           "Kind": "Step",
-          "Detail": "publish event 21 on S (after the slow period)",
+          "Detail": "publish event 21 after the slow part",
           "Version": null
         },
         {
-          "T": 10.114,
+          "T": 10.239,
           "Source": "grain",
-          "Grain": "c-dbafa4",
+          "Grain": "c-19443d",
           "Kind": "OnErrorAsync",
-          "Detail": "Orleans.Streams.QueueCacheMissException: Item not found in cache.  Requested: EventHubSequenceToken(EventHubOffset: , SequenceNumber: 155, EventIndex: 0), Low: EventHubSequenceToken(EventHubOffset: , SequenceNumber: 158, EventIndex: 0), High: EventHubSequenceToken(EventHubOffset: , SequenceNumber: 164, EventIndex: 0)",
+          "Detail": "Orleans.Streams.QueueCacheMissException: Item not found in cache.  Requested: EventHubSequenceToken(EventHubOffset: , SequenceNumber: 1505, EventIndex: 0), Low: EventHubSequenceToken(EventHubOffset: , SequenceNumber: 1508, EventIndex: 0), High: EventHubSequenceToken(EventHubOffset: , SequenceNumber: 1514, EventIndex: 0)",
           "Version": null
         },
         {
-          "T": 20.797,
+          "T": 20.795,
           "Source": "grain",
-          "Grain": "warmup-dbafa4",
+          "Grain": "warmup-19443d",
           "Kind": "Deactivated",
           "Detail": "ActivationIdle",
           "Version": null
         },
         {
-          "T": 22.796,
-          "Source": "grain",
-          "Grain": "c-dbafa4",
-          "Kind": "Deactivated",
-          "Detail": "ActivationIdle",
-          "Version": null
-        },
-        {
-          "T": 23.107,
+          "T": 23.306,
           "Source": "driver",
           "Grain": "",
           "Kind": "Fillers",
-          "Detail": "stopped after 46 events",
+          "Detail": "stopped after 45 events",
           "Version": null
         }
       ],
@@ -581,7 +573,7 @@
     },
     {
       "Id": "D",
-      "Title": "Control: as A, but the cache still remembers S\u0027s last purged token (MetadataMinTimeInCache at its 10 min default)",
+      "Title": "As A, but the cache still has the stream\u0027s lastPurgedToken (MetadataMinTimeInCache 10 min)",
       "Expected": "no OnErrorAsync (cache resumes at its oldest message), OnNextAsync(2); nothing lost; 1 activation",
       "Observed": "0 x OnErrorAsync; delivered [1,2]; lost []; 1 activation(s)",
       "Pass": true,
@@ -603,143 +595,143 @@
           "Source": "driver",
           "Grain": "",
           "Kind": "Fillers",
-          "Detail": "start: 1 event every 500 ms on filler/194080 (same partition, no consumer)",
+          "Detail": "other stream filler/10eeae: 1 event every 500 ms on the same partition, no consumer",
+          "Version": null
+        },
+        {
+          "T": 0,
+          "Source": "driver",
+          "Grain": "d-10eeae",
+          "Kind": "Step",
+          "Detail": "stream consumer/d-10eeae, DataMaxAgeInCache 3 s, MetadataMinTimeInCache 600 s",
+          "Version": null
+        },
+        {
+          "T": 0,
+          "Source": "driver",
+          "Grain": "d-10eeae",
+          "Kind": "Step",
+          "Detail": "grain.Update(1) publishes event 1",
           "Version": null
         },
         {
           "T": 0.001,
-          "Source": "driver",
-          "Grain": "d-194080",
-          "Kind": "Step",
-          "Detail": "S = consumer/d-194080, DataMaxAgeInCache = 3s, MetadataMinTimeInCache = 600s",
-          "Version": null
-        },
-        {
-          "T": 0.001,
-          "Source": "driver",
-          "Grain": "d-194080",
-          "Kind": "Step",
-          "Detail": "publish event 1 on S via grain.Update(1)",
-          "Version": null
-        },
-        {
-          "T": 0.002,
           "Source": "grain",
-          "Grain": "d-194080",
+          "Grain": "d-10eeae",
           "Kind": "Activated",
           "Detail": "",
           "Version": null
         },
         {
-          "T": 0.028,
+          "T": 0.016,
           "Source": "grain",
-          "Grain": "d-194080",
+          "Grain": "d-10eeae",
           "Kind": "Published",
           "Detail": "",
           "Version": 1
         },
         {
-          "T": 0.041,
+          "T": 0.03,
           "Source": "agent",
           "Grain": "",
           "Kind": "AgentLog",
-          "Detail": "Got back 1 subscribers for stream poc/consumer/d-194080.",
+          "Detail": "Got back 1 subscribers for stream poc/consumer/d-10eeae.",
           "Version": null
         },
         {
-          "T": 0.041,
+          "T": 0.031,
           "Source": "agent-\u003Egrain",
-          "Grain": "d-194080",
+          "Grain": "d-10eeae",
           "Kind": "GetSequenceToken",
           "Detail": "returned null (no expectedToken)",
           "Version": null
         },
         {
-          "T": 0.041,
+          "T": 0.031,
           "Source": "grain",
-          "Grain": "d-194080",
+          "Grain": "d-10eeae",
           "Kind": "OnSubscribed",
           "Detail": "",
           "Version": null
         },
         {
-          "T": 0.041,
+          "T": 0.031,
           "Source": "grain",
-          "Grain": "d-194080",
+          "Grain": "d-10eeae",
           "Kind": "OnNextAsync",
-          "Detail": "token=EventHubSequenceToken(EventHubOffset: 33176, SequenceNumber: 194, EventIndex: 0)",
+          "Detail": "token=EventHubSequenceToken(EventHubOffset: 271264, SequenceNumber: 1542, EventIndex: 0)",
           "Version": 1
         },
         {
-          "T": 0.13,
+          "T": 0.116,
           "Source": "driver",
-          "Grain": "d-194080",
+          "Grain": "d-10eeae",
           "Kind": "Step",
-          "Detail": "quiet period 26s: no events on S, fillers keep the partition moving, Ping=every 3s",
+          "Detail": "quiet for 26 s while other streams keep publishing, Ping() every 3 s keeps the grain active",
           "Version": null
         },
         {
-          "T": 20.807,
+          "T": 11.852,
           "Source": "grain",
-          "Grain": "warmup-194080",
+          "Grain": "warmup-10eeae",
           "Kind": "Deactivated",
           "Detail": "ActivationIdle",
           "Version": null
         },
         {
-          "T": 26.131,
+          "T": 26.118,
           "Source": "driver",
-          "Grain": "d-194080",
+          "Grain": "d-10eeae",
           "Kind": "Step",
-          "Detail": "publish event 2 on S via grain.Update(2); cache holds 7 messages",
+          "Detail": "grain.Update(2) publishes event 2, the cache holds 7 messages",
           "Version": null
         },
         {
-          "T": 26.136,
+          "T": 26.131,
           "Source": "grain",
-          "Grain": "d-194080",
+          "Grain": "d-10eeae",
           "Kind": "Published",
           "Detail": "",
           "Version": 2
         },
         {
-          "T": 26.158,
+          "T": 26.154,
           "Source": "agent",
           "Grain": "",
           "Kind": "AgentLog",
-          "Detail": "Got back 1 subscribers for stream poc/consumer/d-194080.",
+          "Detail": "Got back 1 subscribers for stream poc/consumer/d-10eeae.",
           "Version": null
         },
         {
-          "T": 26.164,
+          "T": 26.167,
           "Source": "agent-\u003Egrain",
-          "Grain": "d-194080",
+          "Grain": "d-10eeae",
           "Kind": "GetSequenceToken",
-          "Detail": "returned DeliveryToken(EventHubSequenceToken(EventHubOffset: 33176, SequenceNumber: 194, EventIndex: 0))",
+          "Detail": "returned DeliveryToken(EventHubSequenceToken(EventHubOffset: 271264, SequenceNumber: 1542, EventIndex: 0))",
           "Version": null
         },
         {
-          "T": 26.164,
+          "T": 26.167,
           "Source": "grain",
-          "Grain": "d-194080",
+          "Grain": "d-10eeae",
           "Kind": "OnNextAsync",
-          "Detail": "token=EventHubSequenceToken(EventHubOffset: 42328, SequenceNumber: 246, EventIndex: 0)",
+          "Detail": "token=EventHubSequenceToken(EventHubOffset: 280240, SequenceNumber: 1593, EventIndex: 0)",
           "Version": 2
         },
         {
-          "T": 29.239,
+          "T": 29.241,
           "Source": "driver",
-          "Grain": "d-194080",
+          "Grain": "d-10eeae",
           "Kind": "Step",
-          "Detail": "pinged 9 times",
+          "Detail": "9 Ping() calls",
           "Version": null
         },
         {
-          "T": 29.239,
+          "T": 29.241,
           "Source": "driver",
           "Grain": "",
           "Kind": "Fillers",
-          "Detail": "stopped after 58 events",
+          "Detail": "stopped after 57 events",
           "Version": null
         }
       ],
@@ -753,7 +745,7 @@
     },
     {
       "Id": "E",
-      "Title": "Idle-cursor path: as A, but event 2 comes while the agent still has S registered (quiet longer than MetadataMinTimeInCache, shorter than StreamInactivityPeriod)",
+      "Title": "Idle-cursor path: event 2 comes while the agent still knows the quiet stream",
       "Expected": "1 x OnErrorAsync(QueueCacheMissException) from the idle cursor, event 2 skipped; 1 activation",
       "Observed": "1 x OnErrorAsync(QueueCacheMissException); delivered [1]; lost [2]; 1 activation(s)",
       "Pass": true,
@@ -778,53 +770,53 @@
           "Source": "driver",
           "Grain": "",
           "Kind": "Fillers",
-          "Detail": "start: 1 event every 500 ms on filler/059740 (same partition, no consumer)",
+          "Detail": "other stream filler/679850: 1 event every 500 ms on the same partition, no consumer",
           "Version": null
         },
         {
           "T": 0,
           "Source": "driver",
-          "Grain": "e-059740",
+          "Grain": "e-679850",
           "Kind": "Step",
-          "Detail": "S = consumer/e-059740, DataMaxAgeInCache = 3s, MetadataMinTimeInCache = 5s",
+          "Detail": "stream consumer/e-679850, DataMaxAgeInCache 3 s, MetadataMinTimeInCache 5 s",
           "Version": null
         },
         {
           "T": 0,
           "Source": "driver",
-          "Grain": "e-059740",
+          "Grain": "e-679850",
           "Kind": "Step",
-          "Detail": "publish event 1 on S via grain.Update(1)",
+          "Detail": "grain.Update(1) publishes event 1",
           "Version": null
         },
         {
           "T": 0.001,
           "Source": "grain",
-          "Grain": "e-059740",
+          "Grain": "e-679850",
           "Kind": "Activated",
           "Detail": "",
           "Version": null
         },
         {
-          "T": 0.014,
+          "T": 0.012,
           "Source": "grain",
-          "Grain": "e-059740",
+          "Grain": "e-679850",
           "Kind": "Published",
           "Detail": "",
           "Version": 1
         },
         {
-          "T": 0.03,
+          "T": 0.029,
           "Source": "agent",
           "Grain": "",
           "Kind": "AgentLog",
-          "Detail": "Got back 1 subscribers for stream poc/consumer/e-059740.",
+          "Detail": "Got back 1 subscribers for stream poc/consumer/e-679850.",
           "Version": null
         },
         {
-          "T": 0.03,
+          "T": 0.029,
           "Source": "agent-\u003Egrain",
-          "Grain": "e-059740",
+          "Grain": "e-679850",
           "Kind": "GetSequenceToken",
           "Detail": "returned null (no expectedToken)",
           "Version": null
@@ -832,73 +824,73 @@
         {
           "T": 0.03,
           "Source": "grain",
-          "Grain": "e-059740",
+          "Grain": "e-679850",
           "Kind": "OnSubscribed",
           "Detail": "",
           "Version": null
         },
         {
-          "T": 0.031,
+          "T": 0.03,
           "Source": "grain",
-          "Grain": "e-059740",
+          "Grain": "e-679850",
           "Kind": "OnNextAsync",
-          "Detail": "token=EventHubSequenceToken(EventHubOffset: 44104, SequenceNumber: 256, EventIndex: 0)",
+          "Detail": "token=EventHubSequenceToken(EventHubOffset: 282016, SequenceNumber: 1603, EventIndex: 0)",
           "Version": 1
         },
         {
-          "T": 0.115,
+          "T": 0.113,
           "Source": "driver",
-          "Grain": "e-059740",
+          "Grain": "e-679850",
           "Kind": "Step",
-          "Detail": "quiet period 12s: no events on S, fillers keep the partition moving, Ping=every 3s",
+          "Detail": "quiet for 12 s while other streams keep publishing, Ping() every 3 s keeps the grain active",
           "Version": null
         },
         {
-          "T": 12.116,
+          "T": 12.12,
           "Source": "driver",
-          "Grain": "e-059740",
+          "Grain": "e-679850",
           "Kind": "Step",
-          "Detail": "publish event 2 on S via grain.Update(2); cache holds 7 messages",
+          "Detail": "grain.Update(2) publishes event 2, the cache holds 7 messages",
           "Version": null
         },
         {
-          "T": 12.124,
+          "T": 12.143,
           "Source": "grain",
-          "Grain": "e-059740",
+          "Grain": "e-679850",
           "Kind": "Published",
           "Detail": "",
           "Version": 2
         },
         {
-          "T": 12.145,
+          "T": 12.169,
           "Source": "grain",
-          "Grain": "e-059740",
+          "Grain": "e-679850",
           "Kind": "OnErrorAsync",
-          "Detail": "Orleans.Streams.QueueCacheMissException: Item not found in cache.  Requested: EventHubSequenceToken(EventHubOffset: , SequenceNumber: 256, EventIndex: 0), Low: EventHubSequenceToken(EventHubOffset: , SequenceNumber: 274, EventIndex: 0), High: EventHubSequenceToken(EventHubOffset: , SequenceNumber: 280, EventIndex: 0)",
+          "Detail": "Orleans.Streams.QueueCacheMissException: Item not found in cache.  Requested: EventHubSequenceToken(EventHubOffset: , SequenceNumber: 1603, EventIndex: 0), Low: EventHubSequenceToken(EventHubOffset: , SequenceNumber: 1621, EventIndex: 0), High: EventHubSequenceToken(EventHubOffset: , SequenceNumber: 1627, EventIndex: 0)",
           "Version": null
         },
         {
-          "T": 20.794,
+          "T": 20.743,
           "Source": "grain",
-          "Grain": "warmup-059740",
+          "Grain": "warmup-679850",
           "Kind": "Deactivated",
           "Detail": "ActivationIdle",
           "Version": null
         },
         {
-          "T": 45.226,
+          "T": 45.234,
           "Source": "driver",
-          "Grain": "e-059740",
+          "Grain": "e-679850",
           "Kind": "Step",
-          "Detail": "pinged 15 times",
+          "Detail": "15 Ping() calls",
           "Version": null
         },
         {
-          "T": 45.227,
+          "T": 45.235,
           "Source": "driver",
           "Grain": "",
           "Kind": "Fillers",
-          "Detail": "stopped after 89 events",
+          "Detail": "stopped after 88 events",
           "Version": null
         }
       ],
@@ -912,7 +904,7 @@
     },
     {
       "Id": "A-mid",
-      "Title": "As A, DataMaxAgeInCache doubled but still shorter than the quiet period",
+      "Title": "As A, DataMaxAgeInCache doubled, still shorter than the quiet time",
       "Expected": "1 x OnErrorAsync(QueueCacheMissException) at the handshake, then OnNextAsync(2); nothing lost; 1 activation",
       "Observed": "1 x OnErrorAsync(QueueCacheMissException); delivered [1,2]; lost []; 1 activation(s)",
       "Pass": true,
@@ -936,147 +928,147 @@
           "Source": "driver",
           "Grain": "",
           "Kind": "Fillers",
-          "Detail": "start: 1 event every 500 ms on filler/375911 (same partition, no consumer)",
+          "Detail": "other stream filler/f66564: 1 event every 500 ms on the same partition, no consumer",
           "Version": null
         },
         {
           "T": 0,
           "Source": "driver",
-          "Grain": "a-mid-375911",
+          "Grain": "a-mid-f66564",
           "Kind": "Step",
-          "Detail": "S = consumer/a-mid-375911, DataMaxAgeInCache = 6s, MetadataMinTimeInCache = 5s",
+          "Detail": "stream consumer/a-mid-f66564, DataMaxAgeInCache 6 s, MetadataMinTimeInCache 5 s",
           "Version": null
         },
         {
           "T": 0,
           "Source": "driver",
-          "Grain": "a-mid-375911",
+          "Grain": "a-mid-f66564",
           "Kind": "Step",
-          "Detail": "publish event 1 on S via grain.Update(1)",
+          "Detail": "grain.Update(1) publishes event 1",
           "Version": null
         },
         {
           "T": 0.001,
           "Source": "grain",
-          "Grain": "a-mid-375911",
+          "Grain": "a-mid-f66564",
           "Kind": "Activated",
           "Detail": "",
           "Version": null
         },
         {
-          "T": 0.014,
+          "T": 0.021,
           "Source": "grain",
-          "Grain": "a-mid-375911",
+          "Grain": "a-mid-f66564",
           "Kind": "Published",
           "Detail": "",
           "Version": 1
         },
         {
-          "T": 0.031,
+          "T": 0.038,
           "Source": "agent",
           "Grain": "",
           "Kind": "AgentLog",
-          "Detail": "Got back 1 subscribers for stream poc/consumer/a-mid-375911.",
+          "Detail": "Got back 1 subscribers for stream poc/consumer/a-mid-f66564.",
           "Version": null
         },
         {
-          "T": 0.031,
+          "T": 0.038,
           "Source": "agent-\u003Egrain",
-          "Grain": "a-mid-375911",
+          "Grain": "a-mid-f66564",
           "Kind": "GetSequenceToken",
           "Detail": "returned null (no expectedToken)",
           "Version": null
         },
         {
-          "T": 0.031,
+          "T": 0.038,
           "Source": "grain",
-          "Grain": "a-mid-375911",
+          "Grain": "a-mid-f66564",
           "Kind": "OnSubscribed",
           "Detail": "",
           "Version": null
         },
         {
-          "T": 0.031,
+          "T": 0.038,
           "Source": "grain",
-          "Grain": "a-mid-375911",
+          "Grain": "a-mid-f66564",
           "Kind": "OnNextAsync",
-          "Detail": "token=EventHubSequenceToken(EventHubOffset: 60488, SequenceNumber: 349, EventIndex: 0)",
+          "Detail": "token=EventHubSequenceToken(EventHubOffset: 298224, SequenceNumber: 1695, EventIndex: 0)",
           "Version": 1
         },
         {
-          "T": 0.115,
+          "T": 0.129,
           "Source": "driver",
-          "Grain": "a-mid-375911",
+          "Grain": "a-mid-f66564",
           "Kind": "Step",
-          "Detail": "quiet period 26s: no events on S, fillers keep the partition moving, Ping=every 3s",
+          "Detail": "quiet for 26 s while other streams keep publishing, Ping() every 3 s keeps the grain active",
           "Version": null
         },
         {
-          "T": 20.815,
+          "T": 20.778,
           "Source": "grain",
-          "Grain": "warmup-375911",
+          "Grain": "warmup-f66564",
           "Kind": "Deactivated",
           "Detail": "ActivationIdle",
           "Version": null
         },
         {
-          "T": 26.116,
+          "T": 26.13,
           "Source": "driver",
-          "Grain": "a-mid-375911",
+          "Grain": "a-mid-f66564",
           "Kind": "Step",
-          "Detail": "publish event 2 on S via grain.Update(2); cache holds 13 messages",
+          "Detail": "grain.Update(2) publishes event 2, the cache holds 13 messages",
           "Version": null
         },
         {
-          "T": 26.125,
+          "T": 26.171,
           "Source": "grain",
-          "Grain": "a-mid-375911",
+          "Grain": "a-mid-f66564",
           "Kind": "Published",
           "Detail": "",
           "Version": 2
         },
         {
-          "T": 26.146,
+          "T": 26.192,
           "Source": "agent",
           "Grain": "",
           "Kind": "AgentLog",
-          "Detail": "Got back 1 subscribers for stream poc/consumer/a-mid-375911.",
+          "Detail": "Got back 1 subscribers for stream poc/consumer/a-mid-f66564.",
           "Version": null
         },
         {
-          "T": 26.146,
+          "T": 26.192,
           "Source": "agent-\u003Egrain",
-          "Grain": "a-mid-375911",
+          "Grain": "a-mid-f66564",
           "Kind": "GetSequenceToken",
-          "Detail": "returned DeliveryToken(EventHubSequenceToken(EventHubOffset: 60488, SequenceNumber: 349, EventIndex: 0))",
+          "Detail": "returned DeliveryToken(EventHubSequenceToken(EventHubOffset: 298224, SequenceNumber: 1695, EventIndex: 0))",
           "Version": null
         },
         {
-          "T": 26.146,
+          "T": 26.192,
           "Source": "grain",
-          "Grain": "a-mid-375911",
+          "Grain": "a-mid-f66564",
           "Kind": "OnErrorAsync",
-          "Detail": "Orleans.Streams.QueueCacheMissException: Item not found in cache.  Requested: EventHubSequenceToken(EventHubOffset: 60488, SequenceNumber: 349, EventIndex: 0), Low: EventHubSequenceToken(EventHubOffset: , SequenceNumber: 389, EventIndex: 0), High: EventHubSequenceToken(EventHubOffset: , SequenceNumber: 401, EventIndex: 0)",
+          "Detail": "Orleans.Streams.QueueCacheMissException: Item not found in cache.  Requested: EventHubSequenceToken(EventHubOffset: 298224, SequenceNumber: 1695, EventIndex: 0), Low: EventHubSequenceToken(EventHubOffset: , SequenceNumber: 1735, EventIndex: 0), High: EventHubSequenceToken(EventHubOffset: , SequenceNumber: 1747, EventIndex: 0)",
           "Version": null
         },
         {
-          "T": 26.146,
+          "T": 26.192,
           "Source": "grain",
-          "Grain": "a-mid-375911",
+          "Grain": "a-mid-f66564",
           "Kind": "OnNextAsync",
-          "Detail": "token=EventHubSequenceToken(EventHubOffset: 69472, SequenceNumber: 400, EventIndex: 0)",
+          "Detail": "token=EventHubSequenceToken(EventHubOffset: 307208, SequenceNumber: 1746, EventIndex: 0)",
           "Version": 2
         },
         {
-          "T": 29.226,
+          "T": 29.273,
           "Source": "driver",
-          "Grain": "a-mid-375911",
+          "Grain": "a-mid-f66564",
           "Kind": "Step",
-          "Detail": "pinged 9 times",
+          "Detail": "9 Ping() calls",
           "Version": null
         },
         {
-          "T": 29.226,
+          "T": 29.283,
           "Source": "driver",
           "Grain": "",
           "Kind": "Fillers",
@@ -1094,7 +1086,7 @@
     },
     {
       "Id": "E-mid",
-      "Title": "As E, DataMaxAgeInCache doubled; quiet still between DataMaxAgeInCache \u002B MetadataMinTimeInCache and StreamInactivityPeriod",
+      "Title": "As E, DataMaxAgeInCache doubled, still shorter than the quiet time",
       "Expected": "1 x OnErrorAsync(QueueCacheMissException) from the idle cursor, event 2 skipped; 1 activation",
       "Observed": "1 x OnErrorAsync(QueueCacheMissException); delivered [1]; lost [2]; 1 activation(s)",
       "Pass": true,
@@ -1119,127 +1111,127 @@
           "Source": "driver",
           "Grain": "",
           "Kind": "Fillers",
-          "Detail": "start: 1 event every 500 ms on filler/b9ea9d (same partition, no consumer)",
+          "Detail": "other stream filler/763332: 1 event every 500 ms on the same partition, no consumer",
           "Version": null
         },
         {
           "T": 0,
           "Source": "driver",
-          "Grain": "e-mid-b9ea9d",
+          "Grain": "e-mid-763332",
           "Kind": "Step",
-          "Detail": "S = consumer/e-mid-b9ea9d, DataMaxAgeInCache = 6s, MetadataMinTimeInCache = 5s",
+          "Detail": "stream consumer/e-mid-763332, DataMaxAgeInCache 6 s, MetadataMinTimeInCache 5 s",
           "Version": null
         },
         {
           "T": 0,
           "Source": "driver",
-          "Grain": "e-mid-b9ea9d",
+          "Grain": "e-mid-763332",
           "Kind": "Step",
-          "Detail": "publish event 1 on S via grain.Update(1)",
+          "Detail": "grain.Update(1) publishes event 1",
           "Version": null
         },
         {
-          "T": 0,
+          "T": 0.001,
           "Source": "grain",
-          "Grain": "e-mid-b9ea9d",
+          "Grain": "e-mid-763332",
           "Kind": "Activated",
           "Detail": "",
           "Version": null
         },
         {
-          "T": 0.013,
+          "T": 0.011,
           "Source": "grain",
-          "Grain": "e-mid-b9ea9d",
+          "Grain": "e-mid-763332",
           "Kind": "Published",
           "Detail": "",
           "Version": 1
         },
         {
-          "T": 0.031,
+          "T": 0.029,
           "Source": "agent",
           "Grain": "",
           "Kind": "AgentLog",
-          "Detail": "Got back 1 subscribers for stream poc/consumer/e-mid-b9ea9d.",
+          "Detail": "Got back 1 subscribers for stream poc/consumer/e-mid-763332.",
           "Version": null
         },
         {
-          "T": 0.031,
+          "T": 0.029,
           "Source": "agent-\u003Egrain",
-          "Grain": "e-mid-b9ea9d",
+          "Grain": "e-mid-763332",
           "Kind": "GetSequenceToken",
           "Detail": "returned null (no expectedToken)",
           "Version": null
         },
         {
-          "T": 0.032,
+          "T": 0.029,
           "Source": "grain",
-          "Grain": "e-mid-b9ea9d",
+          "Grain": "e-mid-763332",
           "Kind": "OnSubscribed",
           "Detail": "",
           "Version": null
         },
         {
-          "T": 0.032,
+          "T": 0.029,
           "Source": "grain",
-          "Grain": "e-mid-b9ea9d",
+          "Grain": "e-mid-763332",
           "Kind": "OnNextAsync",
-          "Detail": "token=EventHubSequenceToken(EventHubOffset: 71248, SequenceNumber: 410, EventIndex: 0)",
+          "Detail": "token=EventHubSequenceToken(EventHubOffset: 308984, SequenceNumber: 1756, EventIndex: 0)",
           "Version": 1
         },
         {
-          "T": 0.114,
+          "T": 0.112,
           "Source": "driver",
-          "Grain": "e-mid-b9ea9d",
+          "Grain": "e-mid-763332",
           "Kind": "Step",
-          "Detail": "quiet period 17s: no events on S, fillers keep the partition moving, Ping=every 3s",
+          "Detail": "quiet for 17 s while other streams keep publishing, Ping() every 3 s keeps the grain active",
           "Version": null
         },
         {
-          "T": 11.847,
+          "T": 11.845,
           "Source": "grain",
-          "Grain": "warmup-b9ea9d",
+          "Grain": "warmup-763332",
           "Kind": "Deactivated",
           "Detail": "ActivationIdle",
           "Version": null
         },
         {
-          "T": 17.115,
+          "T": 17.118,
           "Source": "driver",
-          "Grain": "e-mid-b9ea9d",
+          "Grain": "e-mid-763332",
           "Kind": "Step",
-          "Detail": "publish event 2 on S via grain.Update(2); cache holds 13 messages",
+          "Detail": "grain.Update(2) publishes event 2, the cache holds 13 messages",
           "Version": null
         },
         {
-          "T": 17.126,
+          "T": 17.131,
           "Source": "grain",
-          "Grain": "e-mid-b9ea9d",
+          "Grain": "e-mid-763332",
           "Kind": "Published",
           "Detail": "",
           "Version": 2
         },
         {
-          "T": 17.147,
+          "T": 17.154,
           "Source": "grain",
-          "Grain": "e-mid-b9ea9d",
+          "Grain": "e-mid-763332",
           "Kind": "OnErrorAsync",
-          "Detail": "Orleans.Streams.QueueCacheMissException: Item not found in cache.  Requested: EventHubSequenceToken(EventHubOffset: , SequenceNumber: 410, EventIndex: 0), Low: EventHubSequenceToken(EventHubOffset: , SequenceNumber: 432, EventIndex: 0), High: EventHubSequenceToken(EventHubOffset: , SequenceNumber: 444, EventIndex: 0)",
+          "Detail": "Orleans.Streams.QueueCacheMissException: Item not found in cache.  Requested: EventHubSequenceToken(EventHubOffset: , SequenceNumber: 1756, EventIndex: 0), Low: EventHubSequenceToken(EventHubOffset: , SequenceNumber: 1778, EventIndex: 0), High: EventHubSequenceToken(EventHubOffset: , SequenceNumber: 1790, EventIndex: 0)",
           "Version": null
         },
         {
-          "T": 50.207,
+          "T": 50.146,
           "Source": "driver",
-          "Grain": "e-mid-b9ea9d",
+          "Grain": "e-mid-763332",
           "Kind": "Step",
-          "Detail": "pinged 16 times",
+          "Detail": "16 Ping() calls",
           "Version": null
         },
         {
-          "T": 50.207,
+          "T": 50.146,
           "Source": "driver",
           "Grain": "",
           "Kind": "Fillers",
-          "Detail": "stopped after 99 events",
+          "Detail": "stopped after 98 events",
           "Version": null
         }
       ],
@@ -1253,7 +1245,7 @@
     },
     {
       "Id": "A-big",
-      "Title": "As A, DataMaxAgeInCache longer than the quiet period",
+      "Title": "As A, DataMaxAgeInCache longer than the quiet time",
       "Expected": "no OnErrorAsync (expectedToken still cached), OnNextAsync(2); nothing lost; 1 activation",
       "Observed": "0 x OnErrorAsync; delivered [1,2]; lost []; 1 activation(s)",
       "Pass": true,
@@ -1275,143 +1267,143 @@
           "Source": "driver",
           "Grain": "",
           "Kind": "Fillers",
-          "Detail": "start: 1 event every 500 ms on filler/41f986 (same partition, no consumer)",
+          "Detail": "other stream filler/f44ec3: 1 event every 500 ms on the same partition, no consumer",
           "Version": null
         },
         {
           "T": 0,
           "Source": "driver",
-          "Grain": "a-big-41f986",
+          "Grain": "a-big-f44ec3",
           "Kind": "Step",
-          "Detail": "S = consumer/a-big-41f986, DataMaxAgeInCache = 40s, MetadataMinTimeInCache = 5s",
+          "Detail": "stream consumer/a-big-f44ec3, DataMaxAgeInCache 40 s, MetadataMinTimeInCache 5 s",
           "Version": null
         },
         {
           "T": 0,
           "Source": "driver",
-          "Grain": "a-big-41f986",
+          "Grain": "a-big-f44ec3",
           "Kind": "Step",
-          "Detail": "publish event 1 on S via grain.Update(1)",
+          "Detail": "grain.Update(1) publishes event 1",
           "Version": null
         },
         {
-          "T": 0,
+          "T": 0.001,
           "Source": "grain",
-          "Grain": "a-big-41f986",
+          "Grain": "a-big-f44ec3",
           "Kind": "Activated",
           "Detail": "",
           "Version": null
         },
         {
-          "T": 0.019,
+          "T": 0.015,
           "Source": "grain",
-          "Grain": "a-big-41f986",
+          "Grain": "a-big-f44ec3",
           "Kind": "Published",
           "Detail": "",
           "Version": 1
         },
         {
-          "T": 0.035,
+          "T": 0.03,
           "Source": "agent",
           "Grain": "",
           "Kind": "AgentLog",
-          "Detail": "Got back 1 subscribers for stream poc/consumer/a-big-41f986.",
+          "Detail": "Got back 1 subscribers for stream poc/consumer/a-big-f44ec3.",
           "Version": null
         },
         {
-          "T": 0.035,
+          "T": 0.03,
           "Source": "agent-\u003Egrain",
-          "Grain": "a-big-41f986",
+          "Grain": "a-big-f44ec3",
           "Kind": "GetSequenceToken",
           "Detail": "returned null (no expectedToken)",
           "Version": null
         },
         {
-          "T": 0.036,
+          "T": 0.03,
           "Source": "grain",
-          "Grain": "a-big-41f986",
+          "Grain": "a-big-f44ec3",
           "Kind": "OnSubscribed",
           "Detail": "",
           "Version": null
         },
         {
-          "T": 0.036,
+          "T": 0.03,
           "Source": "grain",
-          "Grain": "a-big-41f986",
+          "Grain": "a-big-f44ec3",
           "Kind": "OnNextAsync",
-          "Detail": "token=EventHubSequenceToken(EventHubOffset: 89408, SequenceNumber: 513, EventIndex: 0)",
+          "Detail": "token=EventHubSequenceToken(EventHubOffset: 326968, SequenceNumber: 1858, EventIndex: 0)",
           "Version": 1
         },
         {
-          "T": 0.12,
+          "T": 0.116,
           "Source": "driver",
-          "Grain": "a-big-41f986",
+          "Grain": "a-big-f44ec3",
           "Kind": "Step",
-          "Detail": "quiet period 26s: no events on S, fillers keep the partition moving, Ping=every 3s",
+          "Detail": "quiet for 26 s while other streams keep publishing, Ping() every 3 s keeps the grain active",
           "Version": null
         },
         {
-          "T": 20.79,
+          "T": 20.797,
           "Source": "grain",
-          "Grain": "warmup-41f986",
+          "Grain": "warmup-f44ec3",
           "Kind": "Deactivated",
           "Detail": "ActivationIdle",
           "Version": null
         },
         {
-          "T": 26.121,
+          "T": 26.119,
           "Source": "driver",
-          "Grain": "a-big-41f986",
+          "Grain": "a-big-f44ec3",
           "Kind": "Step",
-          "Detail": "publish event 2 on S via grain.Update(2); cache holds 53 messages",
+          "Detail": "grain.Update(2) publishes event 2, the cache holds 51 messages",
           "Version": null
         },
         {
-          "T": 26.133,
+          "T": 26.131,
           "Source": "grain",
-          "Grain": "a-big-41f986",
+          "Grain": "a-big-f44ec3",
           "Kind": "Published",
           "Detail": "",
           "Version": 2
         },
         {
-          "T": 26.154,
+          "T": 26.17,
           "Source": "agent",
           "Grain": "",
           "Kind": "AgentLog",
-          "Detail": "Got back 1 subscribers for stream poc/consumer/a-big-41f986.",
+          "Detail": "Got back 1 subscribers for stream poc/consumer/a-big-f44ec3.",
           "Version": null
         },
         {
-          "T": 26.154,
+          "T": 26.17,
           "Source": "agent-\u003Egrain",
-          "Grain": "a-big-41f986",
+          "Grain": "a-big-f44ec3",
           "Kind": "GetSequenceToken",
-          "Detail": "returned DeliveryToken(EventHubSequenceToken(EventHubOffset: 89408, SequenceNumber: 513, EventIndex: 0))",
+          "Detail": "returned DeliveryToken(EventHubSequenceToken(EventHubOffset: 326968, SequenceNumber: 1858, EventIndex: 0))",
           "Version": null
         },
         {
-          "T": 26.154,
+          "T": 26.171,
           "Source": "grain",
-          "Grain": "a-big-41f986",
+          "Grain": "a-big-f44ec3",
           "Kind": "OnNextAsync",
-          "Detail": "token=EventHubSequenceToken(EventHubOffset: 98392, SequenceNumber: 564, EventIndex: 0)",
+          "Detail": "token=EventHubSequenceToken(EventHubOffset: 335952, SequenceNumber: 1909, EventIndex: 0)",
           "Version": 2
         },
         {
-          "T": 29.234,
+          "T": 29.244,
           "Source": "driver",
-          "Grain": "a-big-41f986",
+          "Grain": "a-big-f44ec3",
           "Kind": "Step",
-          "Detail": "pinged 9 times",
+          "Detail": "9 Ping() calls",
           "Version": null
         },
         {
-          "T": 29.248,
+          "T": 29.244,
           "Source": "driver",
           "Grain": "",
           "Kind": "Fillers",
-          "Detail": "stopped after 58 events",
+          "Detail": "stopped after 57 events",
           "Version": null
         }
       ],
@@ -1420,12 +1412,12 @@
         "MetadataMinTimeInCache": 5,
         "Quiet": 26
       },
-      "CacheMaxMessages": 60,
+      "CacheMaxMessages": 58,
       "CacheMaxBytes": 1048576
     },
     {
       "Id": "E-big",
-      "Title": "As E, DataMaxAgeInCache longer than the quiet period",
+      "Title": "As E, DataMaxAgeInCache longer than the quiet time",
       "Expected": "no OnErrorAsync (idle cursor position still cached), OnNextAsync(2); nothing lost; 1 activation",
       "Observed": "0 x OnErrorAsync; delivered [1,2]; lost []; 1 activation(s)",
       "Pass": true,
@@ -1447,115 +1439,115 @@
           "Source": "driver",
           "Grain": "",
           "Kind": "Fillers",
-          "Detail": "start: 1 event every 500 ms on filler/908b26 (same partition, no consumer)",
+          "Detail": "other stream filler/ee3fe4: 1 event every 500 ms on the same partition, no consumer",
           "Version": null
         },
         {
-          "T": 0,
+          "T": 0.001,
           "Source": "driver",
-          "Grain": "e-big-908b26",
+          "Grain": "e-big-ee3fe4",
           "Kind": "Step",
-          "Detail": "S = consumer/e-big-908b26, DataMaxAgeInCache = 40s, MetadataMinTimeInCache = 5s",
+          "Detail": "stream consumer/e-big-ee3fe4, DataMaxAgeInCache 40 s, MetadataMinTimeInCache 5 s",
           "Version": null
         },
         {
-          "T": 0,
+          "T": 0.001,
           "Source": "driver",
-          "Grain": "e-big-908b26",
+          "Grain": "e-big-ee3fe4",
           "Kind": "Step",
-          "Detail": "publish event 1 on S via grain.Update(1)",
+          "Detail": "grain.Update(1) publishes event 1",
           "Version": null
         },
         {
-          "T": 0,
+          "T": 0.003,
           "Source": "grain",
-          "Grain": "e-big-908b26",
+          "Grain": "e-big-ee3fe4",
           "Kind": "Activated",
           "Detail": "",
           "Version": null
         },
         {
-          "T": 0.012,
+          "T": 0.025,
           "Source": "grain",
-          "Grain": "e-big-908b26",
+          "Grain": "e-big-ee3fe4",
           "Kind": "Published",
           "Detail": "",
           "Version": 1
         },
         {
-          "T": 0.03,
+          "T": 0.041,
           "Source": "agent",
           "Grain": "",
           "Kind": "AgentLog",
-          "Detail": "Got back 1 subscribers for stream poc/consumer/e-big-908b26.",
+          "Detail": "Got back 1 subscribers for stream poc/consumer/e-big-ee3fe4.",
           "Version": null
         },
         {
-          "T": 0.03,
+          "T": 0.042,
           "Source": "agent-\u003Egrain",
-          "Grain": "e-big-908b26",
+          "Grain": "e-big-ee3fe4",
           "Kind": "GetSequenceToken",
           "Detail": "returned null (no expectedToken)",
           "Version": null
         },
         {
-          "T": 0.03,
+          "T": 0.042,
           "Source": "grain",
-          "Grain": "e-big-908b26",
+          "Grain": "e-big-ee3fe4",
           "Kind": "OnSubscribed",
           "Detail": "",
           "Version": null
         },
         {
-          "T": 0.031,
+          "T": 0.042,
           "Source": "grain",
-          "Grain": "e-big-908b26",
+          "Grain": "e-big-ee3fe4",
           "Kind": "OnNextAsync",
-          "Detail": "token=EventHubSequenceToken(EventHubOffset: 100352, SequenceNumber: 575, EventIndex: 0)",
+          "Detail": "token=EventHubSequenceToken(EventHubOffset: 337736, SequenceNumber: 1919, EventIndex: 0)",
           "Version": 1
         },
         {
-          "T": 0.113,
+          "T": 0.127,
           "Source": "driver",
-          "Grain": "e-big-908b26",
+          "Grain": "e-big-ee3fe4",
           "Kind": "Step",
-          "Detail": "quiet period 12s: no events on S, fillers keep the partition moving, Ping=every 3s",
+          "Detail": "quiet for 12 s while other streams keep publishing, Ping() every 3 s keeps the grain active",
           "Version": null
         },
         {
-          "T": 12.114,
+          "T": 12.128,
           "Source": "driver",
-          "Grain": "e-big-908b26",
+          "Grain": "e-big-ee3fe4",
           "Kind": "Step",
-          "Detail": "publish event 2 on S via grain.Update(2); cache holds 25 messages",
+          "Detail": "grain.Update(2) publishes event 2, the cache holds 25 messages",
           "Version": null
         },
         {
-          "T": 12.124,
+          "T": 12.144,
           "Source": "grain",
-          "Grain": "e-big-908b26",
+          "Grain": "e-big-ee3fe4",
           "Kind": "Published",
           "Detail": "",
           "Version": 2
         },
         {
-          "T": 12.145,
+          "T": 12.166,
           "Source": "grain",
-          "Grain": "e-big-908b26",
+          "Grain": "e-big-ee3fe4",
           "Kind": "OnNextAsync",
-          "Detail": "token=EventHubSequenceToken(EventHubOffset: 104584, SequenceNumber: 599, EventIndex: 0)",
+          "Detail": "token=EventHubSequenceToken(EventHubOffset: 341968, SequenceNumber: 1943, EventIndex: 0)",
           "Version": 2
         },
         {
-          "T": 15.225,
+          "T": 15.246,
           "Source": "driver",
-          "Grain": "e-big-908b26",
+          "Grain": "e-big-ee3fe4",
           "Kind": "Step",
-          "Detail": "pinged 5 times",
+          "Detail": "5 Ping() calls",
           "Version": null
         },
         {
-          "T": 15.225,
+          "T": 15.246,
           "Source": "driver",
           "Grain": "",
           "Kind": "Fillers",
@@ -1573,7 +1565,7 @@
     },
     {
       "Id": "A-meta",
-      "Title": "As A, DataMaxAgeInCache unchanged, MetadataMinTimeInCache longer than the quiet period",
+      "Title": "As A, MetadataMinTimeInCache longer than the quiet time",
       "Expected": "no OnErrorAsync (cache resumes at its oldest message), OnNextAsync(2); nothing lost; 1 activation",
       "Observed": "0 x OnErrorAsync; delivered [1,2]; lost []; 1 activation(s)",
       "Pass": true,
@@ -1595,143 +1587,143 @@
           "Source": "driver",
           "Grain": "",
           "Kind": "Fillers",
-          "Detail": "start: 1 event every 500 ms on filler/dc4d9e (same partition, no consumer)",
+          "Detail": "other stream filler/68c97e: 1 event every 500 ms on the same partition, no consumer",
           "Version": null
         },
         {
           "T": 0,
           "Source": "driver",
-          "Grain": "a-meta-dc4d9e",
+          "Grain": "a-meta-68c97e",
           "Kind": "Step",
-          "Detail": "S = consumer/a-meta-dc4d9e, DataMaxAgeInCache = 3s, MetadataMinTimeInCache = 40s",
+          "Detail": "stream consumer/a-meta-68c97e, DataMaxAgeInCache 3 s, MetadataMinTimeInCache 40 s",
           "Version": null
         },
         {
-          "T": 0,
+          "T": 0.001,
           "Source": "driver",
-          "Grain": "a-meta-dc4d9e",
+          "Grain": "a-meta-68c97e",
           "Kind": "Step",
-          "Detail": "publish event 1 on S via grain.Update(1)",
+          "Detail": "grain.Update(1) publishes event 1",
           "Version": null
         },
         {
           "T": 0.001,
           "Source": "grain",
-          "Grain": "a-meta-dc4d9e",
+          "Grain": "a-meta-68c97e",
           "Kind": "Activated",
           "Detail": "",
           "Version": null
         },
         {
-          "T": 0.013,
+          "T": 0.022,
           "Source": "grain",
-          "Grain": "a-meta-dc4d9e",
+          "Grain": "a-meta-68c97e",
           "Kind": "Published",
           "Detail": "",
           "Version": 1
         },
         {
-          "T": 0.032,
+          "T": 0.039,
           "Source": "agent",
           "Grain": "",
           "Kind": "AgentLog",
-          "Detail": "Got back 1 subscribers for stream poc/consumer/a-meta-dc4d9e.",
+          "Detail": "Got back 1 subscribers for stream poc/consumer/a-meta-68c97e.",
           "Version": null
         },
         {
-          "T": 0.032,
+          "T": 0.039,
           "Source": "agent-\u003Egrain",
-          "Grain": "a-meta-dc4d9e",
+          "Grain": "a-meta-68c97e",
           "Kind": "GetSequenceToken",
           "Detail": "returned null (no expectedToken)",
           "Version": null
         },
         {
-          "T": 0.032,
+          "T": 0.04,
           "Source": "grain",
-          "Grain": "a-meta-dc4d9e",
+          "Grain": "a-meta-68c97e",
           "Kind": "OnSubscribed",
           "Detail": "",
           "Version": null
         },
         {
-          "T": 0.032,
+          "T": 0.04,
           "Source": "grain",
-          "Grain": "a-meta-dc4d9e",
+          "Grain": "a-meta-68c97e",
           "Kind": "OnNextAsync",
-          "Detail": "token=EventHubSequenceToken(EventHubOffset: 106368, SequenceNumber: 609, EventIndex: 0)",
+          "Detail": "token=EventHubSequenceToken(EventHubOffset: 343752, SequenceNumber: 1953, EventIndex: 0)",
           "Version": 1
         },
         {
-          "T": 0.114,
+          "T": 0.123,
           "Source": "driver",
-          "Grain": "a-meta-dc4d9e",
+          "Grain": "a-meta-68c97e",
           "Kind": "Step",
-          "Detail": "quiet period 26s: no events on S, fillers keep the partition moving, Ping=every 3s",
+          "Detail": "quiet for 26 s while other streams keep publishing, Ping() every 3 s keeps the grain active",
           "Version": null
         },
         {
-          "T": 20.796,
+          "T": 20.729,
           "Source": "grain",
-          "Grain": "warmup-dc4d9e",
+          "Grain": "warmup-68c97e",
           "Kind": "Deactivated",
           "Detail": "ActivationIdle",
           "Version": null
         },
         {
-          "T": 26.116,
+          "T": 26.124,
           "Source": "driver",
-          "Grain": "a-meta-dc4d9e",
+          "Grain": "a-meta-68c97e",
           "Kind": "Step",
-          "Detail": "publish event 2 on S via grain.Update(2); cache holds 7 messages",
+          "Detail": "grain.Update(2) publishes event 2, the cache holds 7 messages",
           "Version": null
         },
         {
-          "T": 26.125,
+          "T": 26.145,
           "Source": "grain",
-          "Grain": "a-meta-dc4d9e",
+          "Grain": "a-meta-68c97e",
           "Kind": "Published",
           "Detail": "",
           "Version": 2
         },
         {
-          "T": 26.147,
+          "T": 26.166,
           "Source": "agent",
           "Grain": "",
           "Kind": "AgentLog",
-          "Detail": "Got back 1 subscribers for stream poc/consumer/a-meta-dc4d9e.",
+          "Detail": "Got back 1 subscribers for stream poc/consumer/a-meta-68c97e.",
           "Version": null
         },
         {
-          "T": 26.147,
+          "T": 26.166,
           "Source": "agent-\u003Egrain",
-          "Grain": "a-meta-dc4d9e",
+          "Grain": "a-meta-68c97e",
           "Kind": "GetSequenceToken",
-          "Detail": "returned DeliveryToken(EventHubSequenceToken(EventHubOffset: 106368, SequenceNumber: 609, EventIndex: 0))",
+          "Detail": "returned DeliveryToken(EventHubSequenceToken(EventHubOffset: 343752, SequenceNumber: 1953, EventIndex: 0))",
           "Version": null
         },
         {
-          "T": 26.147,
+          "T": 26.166,
           "Source": "grain",
-          "Grain": "a-meta-dc4d9e",
+          "Grain": "a-meta-68c97e",
           "Kind": "OnNextAsync",
-          "Detail": "token=EventHubSequenceToken(EventHubOffset: 115528, SequenceNumber: 661, EventIndex: 0)",
+          "Detail": "token=EventHubSequenceToken(EventHubOffset: 352736, SequenceNumber: 2004, EventIndex: 0)",
           "Version": 2
         },
         {
-          "T": 29.228,
+          "T": 29.255,
           "Source": "driver",
-          "Grain": "a-meta-dc4d9e",
+          "Grain": "a-meta-68c97e",
           "Kind": "Step",
-          "Detail": "pinged 9 times",
+          "Detail": "9 Ping() calls",
           "Version": null
         },
         {
-          "T": 29.228,
+          "T": 29.256,
           "Source": "driver",
           "Grain": "",
           "Kind": "Fillers",
-          "Detail": "stopped after 58 events",
+          "Detail": "stopped after 57 events",
           "Version": null
         }
       ],
@@ -1745,7 +1737,7 @@
     },
     {
       "Id": "E-meta",
-      "Title": "As E, DataMaxAgeInCache unchanged, MetadataMinTimeInCache longer than the quiet period",
+      "Title": "As E, MetadataMinTimeInCache longer than the quiet time",
       "Expected": "no OnErrorAsync (cache resumes at its oldest message), OnNextAsync(2); nothing lost; 1 activation",
       "Observed": "0 x OnErrorAsync; delivered [1,2]; lost []; 1 activation(s)",
       "Pass": true,
@@ -1767,115 +1759,115 @@
           "Source": "driver",
           "Grain": "",
           "Kind": "Fillers",
-          "Detail": "start: 1 event every 500 ms on filler/752d8b (same partition, no consumer)",
+          "Detail": "other stream filler/7580f4: 1 event every 500 ms on the same partition, no consumer",
           "Version": null
         },
         {
-          "T": 0,
+          "T": 0.001,
           "Source": "driver",
-          "Grain": "e-meta-752d8b",
+          "Grain": "e-meta-7580f4",
           "Kind": "Step",
-          "Detail": "S = consumer/e-meta-752d8b, DataMaxAgeInCache = 3s, MetadataMinTimeInCache = 40s",
+          "Detail": "stream consumer/e-meta-7580f4, DataMaxAgeInCache 3 s, MetadataMinTimeInCache 40 s",
           "Version": null
         },
         {
-          "T": 0,
+          "T": 0.001,
           "Source": "driver",
-          "Grain": "e-meta-752d8b",
+          "Grain": "e-meta-7580f4",
           "Kind": "Step",
-          "Detail": "publish event 1 on S via grain.Update(1)",
+          "Detail": "grain.Update(1) publishes event 1",
           "Version": null
         },
         {
-          "T": 0,
+          "T": 0.002,
           "Source": "grain",
-          "Grain": "e-meta-752d8b",
+          "Grain": "e-meta-7580f4",
           "Kind": "Activated",
           "Detail": "",
           "Version": null
         },
         {
-          "T": 0.012,
+          "T": 0.021,
           "Source": "grain",
-          "Grain": "e-meta-752d8b",
+          "Grain": "e-meta-7580f4",
           "Kind": "Published",
           "Detail": "",
           "Version": 1
         },
         {
-          "T": 0.032,
+          "T": 0.042,
           "Source": "agent",
           "Grain": "",
           "Kind": "AgentLog",
-          "Detail": "Got back 1 subscribers for stream poc/consumer/e-meta-752d8b.",
+          "Detail": "Got back 1 subscribers for stream poc/consumer/e-meta-7580f4.",
           "Version": null
         },
         {
-          "T": 0.032,
+          "T": 0.043,
           "Source": "agent-\u003Egrain",
-          "Grain": "e-meta-752d8b",
+          "Grain": "e-meta-7580f4",
           "Kind": "GetSequenceToken",
           "Detail": "returned null (no expectedToken)",
           "Version": null
         },
         {
-          "T": 0.032,
+          "T": 0.043,
           "Source": "grain",
-          "Grain": "e-meta-752d8b",
+          "Grain": "e-meta-7580f4",
           "Kind": "OnSubscribed",
           "Detail": "",
           "Version": null
         },
         {
-          "T": 0.032,
+          "T": 0.043,
           "Source": "grain",
-          "Grain": "e-meta-752d8b",
+          "Grain": "e-meta-7580f4",
           "Kind": "OnNextAsync",
-          "Detail": "token=EventHubSequenceToken(EventHubOffset: 117312, SequenceNumber: 671, EventIndex: 0)",
+          "Detail": "token=EventHubSequenceToken(EventHubOffset: 354520, SequenceNumber: 2014, EventIndex: 0)",
           "Version": 1
         },
         {
-          "T": 0.113,
+          "T": 0.122,
           "Source": "driver",
-          "Grain": "e-meta-752d8b",
+          "Grain": "e-meta-7580f4",
           "Kind": "Step",
-          "Detail": "quiet period 12s: no events on S, fillers keep the partition moving, Ping=every 3s",
+          "Detail": "quiet for 12 s while other streams keep publishing, Ping() every 3 s keeps the grain active",
           "Version": null
         },
         {
-          "T": 12.114,
+          "T": 12.127,
           "Source": "driver",
-          "Grain": "e-meta-752d8b",
+          "Grain": "e-meta-7580f4",
           "Kind": "Step",
-          "Detail": "publish event 2 on S via grain.Update(2); cache holds 7 messages",
+          "Detail": "grain.Update(2) publishes event 2, the cache holds 7 messages",
           "Version": null
         },
         {
-          "T": 12.129,
+          "T": 12.15,
           "Source": "grain",
-          "Grain": "e-meta-752d8b",
+          "Grain": "e-meta-7580f4",
           "Kind": "Published",
           "Detail": "",
           "Version": 2
         },
         {
-          "T": 12.15,
+          "T": 12.185,
           "Source": "grain",
-          "Grain": "e-meta-752d8b",
+          "Grain": "e-meta-7580f4",
           "Kind": "OnNextAsync",
-          "Detail": "token=EventHubSequenceToken(EventHubOffset: 121544, SequenceNumber: 695, EventIndex: 0)",
+          "Detail": "token=EventHubSequenceToken(EventHubOffset: 358752, SequenceNumber: 2038, EventIndex: 0)",
           "Version": 2
         },
         {
-          "T": 15.231,
+          "T": 15.253,
           "Source": "driver",
-          "Grain": "e-meta-752d8b",
+          "Grain": "e-meta-7580f4",
           "Kind": "Step",
-          "Detail": "pinged 5 times",
+          "Detail": "5 Ping() calls",
           "Version": null
         },
         {
-          "T": 15.231,
+          "T": 15.253,
           "Source": "driver",
           "Grain": "",
           "Kind": "Fillers",
@@ -1893,7 +1885,7 @@
     },
     {
       "Id": "C-big",
-      "Title": "As C, DataMaxAgeInCache longer than the consumer\u0027s lag",
+      "Title": "As C, DataMaxAgeInCache longer than the grain\u0027s delay",
       "Expected": "no OnErrorAsync, all events delivered (lag shorter than DataMaxAgeInCache)",
       "Observed": "0 x OnErrorAsync; delivered [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21]; lost []; 1 activation(s)",
       "Pass": true,
@@ -1953,37 +1945,37 @@
           "Source": "driver",
           "Grain": "",
           "Kind": "Fillers",
-          "Detail": "start: 1 event every 500 ms on filler/db6cf7 (same partition, no consumer)",
+          "Detail": "other stream filler/69f147: 1 event every 500 ms on the same partition, no consumer",
           "Version": null
         },
         {
           "T": 0,
           "Source": "driver",
-          "Grain": "c-big-db6cf7",
+          "Grain": "c-big-69f147",
           "Kind": "Step",
-          "Detail": "S = consumer/c-big-db6cf7, DataMaxAgeInCache = 40s, MetadataMinTimeInCache = 5s",
+          "Detail": "stream consumer/c-big-69f147, DataMaxAgeInCache 40 s, MetadataMinTimeInCache 5 s",
           "Version": null
         },
         {
           "T": 0,
           "Source": "driver",
-          "Grain": "c-big-db6cf7",
+          "Grain": "c-big-69f147",
           "Kind": "Step",
-          "Detail": "publish events 1..20 on S; event 1 takes 6s to process",
+          "Detail": "publish events 1..20, the grain takes 6 s for event 1",
           "Version": null
         },
         {
-          "T": 0.028,
+          "T": 0.029,
           "Source": "agent",
           "Grain": "",
           "Kind": "AgentLog",
-          "Detail": "Got back 1 subscribers for stream poc/consumer/c-big-db6cf7.",
+          "Detail": "Got back 1 subscribers for stream poc/consumer/c-big-69f147.",
           "Version": null
         },
         {
           "T": 0.029,
           "Source": "grain",
-          "Grain": "c-big-db6cf7",
+          "Grain": "c-big-69f147",
           "Kind": "Activated",
           "Detail": "",
           "Version": null
@@ -1991,7 +1983,7 @@
         {
           "T": 0.029,
           "Source": "agent-\u003Egrain",
-          "Grain": "c-big-db6cf7",
+          "Grain": "c-big-69f147",
           "Kind": "GetSequenceToken",
           "Detail": "returned null (no expectedToken)",
           "Version": null
@@ -1999,7 +1991,7 @@
         {
           "T": 0.029,
           "Source": "grain",
-          "Grain": "c-big-db6cf7",
+          "Grain": "c-big-69f147",
           "Kind": "OnSubscribed",
           "Detail": "",
           "Version": null
@@ -2007,181 +1999,189 @@
         {
           "T": 0.029,
           "Source": "grain",
-          "Grain": "c-big-db6cf7",
+          "Grain": "c-big-69f147",
           "Kind": "OnNextAsync",
-          "Detail": "token=EventHubSequenceToken(EventHubOffset: 123328, SequenceNumber: 705, EventIndex: 0)",
+          "Detail": "token=EventHubSequenceToken(EventHubOffset: 360352, SequenceNumber: 2047, EventIndex: 0)",
           "Version": 1
         },
         {
           "T": 6.031,
           "Source": "grain",
-          "Grain": "c-big-db6cf7",
+          "Grain": "c-big-69f147",
           "Kind": "OnNextAsync",
-          "Detail": "token=EventHubSequenceToken(EventHubOffset: 123512, SequenceNumber: 706, EventIndex: 0)",
+          "Detail": "token=EventHubSequenceToken(EventHubOffset: 360536, SequenceNumber: 2048, EventIndex: 0)",
           "Version": 2
         },
         {
           "T": 6.031,
           "Source": "grain",
-          "Grain": "c-big-db6cf7",
+          "Grain": "c-big-69f147",
           "Kind": "OnNextAsync",
-          "Detail": "token=EventHubSequenceToken(EventHubOffset: 123696, SequenceNumber: 707, EventIndex: 0)",
+          "Detail": "token=EventHubSequenceToken(EventHubOffset: 360720, SequenceNumber: 2049, EventIndex: 0)",
           "Version": 3
         },
         {
           "T": 6.031,
           "Source": "grain",
-          "Grain": "c-big-db6cf7",
+          "Grain": "c-big-69f147",
           "Kind": "OnNextAsync",
-          "Detail": "token=EventHubSequenceToken(EventHubOffset: 123880, SequenceNumber: 708, EventIndex: 0)",
+          "Detail": "token=EventHubSequenceToken(EventHubOffset: 360904, SequenceNumber: 2050, EventIndex: 0)",
           "Version": 4
         },
         {
           "T": 6.031,
           "Source": "grain",
-          "Grain": "c-big-db6cf7",
+          "Grain": "c-big-69f147",
           "Kind": "OnNextAsync",
-          "Detail": "token=EventHubSequenceToken(EventHubOffset: 124064, SequenceNumber: 709, EventIndex: 0)",
+          "Detail": "token=EventHubSequenceToken(EventHubOffset: 361088, SequenceNumber: 2051, EventIndex: 0)",
           "Version": 5
         },
         {
           "T": 6.031,
           "Source": "grain",
-          "Grain": "c-big-db6cf7",
+          "Grain": "c-big-69f147",
           "Kind": "OnNextAsync",
-          "Detail": "token=EventHubSequenceToken(EventHubOffset: 124248, SequenceNumber: 710, EventIndex: 0)",
+          "Detail": "token=EventHubSequenceToken(EventHubOffset: 361272, SequenceNumber: 2052, EventIndex: 0)",
           "Version": 6
         },
         {
           "T": 6.031,
           "Source": "grain",
-          "Grain": "c-big-db6cf7",
+          "Grain": "c-big-69f147",
           "Kind": "OnNextAsync",
-          "Detail": "token=EventHubSequenceToken(EventHubOffset: 124432, SequenceNumber: 711, EventIndex: 0)",
+          "Detail": "token=EventHubSequenceToken(EventHubOffset: 361456, SequenceNumber: 2053, EventIndex: 0)",
           "Version": 7
         },
         {
           "T": 6.031,
           "Source": "grain",
-          "Grain": "c-big-db6cf7",
+          "Grain": "c-big-69f147",
           "Kind": "OnNextAsync",
-          "Detail": "token=EventHubSequenceToken(EventHubOffset: 124616, SequenceNumber: 712, EventIndex: 0)",
+          "Detail": "token=EventHubSequenceToken(EventHubOffset: 361640, SequenceNumber: 2054, EventIndex: 0)",
           "Version": 8
         },
         {
           "T": 6.031,
           "Source": "grain",
-          "Grain": "c-big-db6cf7",
+          "Grain": "c-big-69f147",
           "Kind": "OnNextAsync",
-          "Detail": "token=EventHubSequenceToken(EventHubOffset: 124800, SequenceNumber: 713, EventIndex: 0)",
+          "Detail": "token=EventHubSequenceToken(EventHubOffset: 361824, SequenceNumber: 2055, EventIndex: 0)",
           "Version": 9
         },
         {
           "T": 6.031,
           "Source": "grain",
-          "Grain": "c-big-db6cf7",
+          "Grain": "c-big-69f147",
           "Kind": "OnNextAsync",
-          "Detail": "token=EventHubSequenceToken(EventHubOffset: 124984, SequenceNumber: 714, EventIndex: 0)",
+          "Detail": "token=EventHubSequenceToken(EventHubOffset: 362008, SequenceNumber: 2056, EventIndex: 0)",
           "Version": 10
         },
         {
-          "T": 6.031,
+          "T": 6.032,
           "Source": "grain",
-          "Grain": "c-big-db6cf7",
+          "Grain": "c-big-69f147",
           "Kind": "OnNextAsync",
-          "Detail": "token=EventHubSequenceToken(EventHubOffset: 125168, SequenceNumber: 715, EventIndex: 0)",
+          "Detail": "token=EventHubSequenceToken(EventHubOffset: 362192, SequenceNumber: 2057, EventIndex: 0)",
           "Version": 11
         },
         {
-          "T": 6.031,
+          "T": 6.032,
           "Source": "grain",
-          "Grain": "c-big-db6cf7",
+          "Grain": "c-big-69f147",
           "Kind": "OnNextAsync",
-          "Detail": "token=EventHubSequenceToken(EventHubOffset: 125352, SequenceNumber: 716, EventIndex: 0)",
+          "Detail": "token=EventHubSequenceToken(EventHubOffset: 362376, SequenceNumber: 2058, EventIndex: 0)",
           "Version": 12
         },
         {
-          "T": 6.031,
+          "T": 6.032,
           "Source": "grain",
-          "Grain": "c-big-db6cf7",
+          "Grain": "c-big-69f147",
           "Kind": "OnNextAsync",
-          "Detail": "token=EventHubSequenceToken(EventHubOffset: 125536, SequenceNumber: 717, EventIndex: 0)",
+          "Detail": "token=EventHubSequenceToken(EventHubOffset: 362560, SequenceNumber: 2059, EventIndex: 0)",
           "Version": 13
         },
         {
-          "T": 6.031,
+          "T": 6.032,
           "Source": "grain",
-          "Grain": "c-big-db6cf7",
+          "Grain": "c-big-69f147",
           "Kind": "OnNextAsync",
-          "Detail": "token=EventHubSequenceToken(EventHubOffset: 125720, SequenceNumber: 718, EventIndex: 0)",
+          "Detail": "token=EventHubSequenceToken(EventHubOffset: 362744, SequenceNumber: 2060, EventIndex: 0)",
           "Version": 14
         },
         {
-          "T": 6.031,
+          "T": 6.032,
           "Source": "grain",
-          "Grain": "c-big-db6cf7",
+          "Grain": "c-big-69f147",
           "Kind": "OnNextAsync",
-          "Detail": "token=EventHubSequenceToken(EventHubOffset: 125904, SequenceNumber: 719, EventIndex: 0)",
+          "Detail": "token=EventHubSequenceToken(EventHubOffset: 362928, SequenceNumber: 2061, EventIndex: 0)",
           "Version": 15
         },
         {
-          "T": 6.031,
+          "T": 6.032,
           "Source": "grain",
-          "Grain": "c-big-db6cf7",
+          "Grain": "c-big-69f147",
           "Kind": "OnNextAsync",
-          "Detail": "token=EventHubSequenceToken(EventHubOffset: 126088, SequenceNumber: 720, EventIndex: 0)",
+          "Detail": "token=EventHubSequenceToken(EventHubOffset: 363112, SequenceNumber: 2062, EventIndex: 0)",
           "Version": 16
         },
         {
-          "T": 6.031,
+          "T": 6.032,
           "Source": "grain",
-          "Grain": "c-big-db6cf7",
+          "Grain": "c-big-69f147",
           "Kind": "OnNextAsync",
-          "Detail": "token=EventHubSequenceToken(EventHubOffset: 126272, SequenceNumber: 721, EventIndex: 0)",
+          "Detail": "token=EventHubSequenceToken(EventHubOffset: 363296, SequenceNumber: 2063, EventIndex: 0)",
           "Version": 17
         },
         {
-          "T": 6.031,
+          "T": 6.032,
           "Source": "grain",
-          "Grain": "c-big-db6cf7",
+          "Grain": "c-big-69f147",
           "Kind": "OnNextAsync",
-          "Detail": "token=EventHubSequenceToken(EventHubOffset: 126456, SequenceNumber: 722, EventIndex: 0)",
+          "Detail": "token=EventHubSequenceToken(EventHubOffset: 363480, SequenceNumber: 2064, EventIndex: 0)",
           "Version": 18
         },
         {
           "T": 6.032,
           "Source": "grain",
-          "Grain": "c-big-db6cf7",
+          "Grain": "c-big-69f147",
           "Kind": "OnNextAsync",
-          "Detail": "token=EventHubSequenceToken(EventHubOffset: 126640, SequenceNumber: 723, EventIndex: 0)",
+          "Detail": "token=EventHubSequenceToken(EventHubOffset: 363664, SequenceNumber: 2065, EventIndex: 0)",
           "Version": 19
         },
         {
           "T": 6.032,
           "Source": "grain",
-          "Grain": "c-big-db6cf7",
+          "Grain": "c-big-69f147",
           "Kind": "OnNextAsync",
-          "Detail": "token=EventHubSequenceToken(EventHubOffset: 126824, SequenceNumber: 724, EventIndex: 0)",
+          "Detail": "token=EventHubSequenceToken(EventHubOffset: 363848, SequenceNumber: 2066, EventIndex: 0)",
           "Version": 20
         },
         {
-          "T": 10.077,
+          "T": 10.083,
           "Source": "driver",
-          "Grain": "c-big-db6cf7",
+          "Grain": "c-big-69f147",
           "Kind": "Step",
-          "Detail": "publish event 21 on S (after the slow period)",
+          "Detail": "publish event 21 after the slow part",
           "Version": null
         },
         {
-          "T": 10.111,
+          "T": 10.127,
           "Source": "grain",
-          "Grain": "c-big-db6cf7",
+          "Grain": "c-big-69f147",
           "Kind": "OnNextAsync",
-          "Detail": "token=EventHubSequenceToken(EventHubOffset: 130352, SequenceNumber: 744, EventIndex: 0)",
+          "Detail": "token=EventHubSequenceToken(EventHubOffset: 367376, SequenceNumber: 2086, EventIndex: 0)",
           "Version": 21
         },
         {
-          "T": 13.193,
+          "T": 11.837,
+          "Source": "grain",
+          "Grain": "warmup-69f147",
+          "Kind": "Deactivated",
+          "Detail": "ActivationIdle",
+          "Version": null
+        },
+        {
+          "T": 13.21,
           "Source": "driver",
           "Grain": "",
           "Kind": "Fillers",

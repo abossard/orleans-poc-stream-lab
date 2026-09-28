@@ -1,15 +1,15 @@
-10:42:42.548 Information Orleans.Runtime.Silo: Silo starting with GC settings: ServerGC=False GCLatencyMode=Interactive
-10:42:42.548 Warning     Orleans.Runtime.Silo: Note: Silo not running with ServerGC turned on - recommend checking app config : <configuration>-<runtime>-<gcServer enabled="true">
-10:42:42.548 Warning     Orleans.Runtime.Silo: Note: ServerGC only kicks in on multi-core systems (settings enabling ServerGC have no effect on single-core machines).
-10:42:42.548 Information Orleans.Runtime.Silo: -------------- Initializing silo on host Andres-MacBook-Pro.local MachineName Andres-MacBook-Pro at 127.0.0.1:11119, gen 149424162 --------------
-10:42:42.548 Information Orleans.Runtime.Silo: Starting silo Silo_e669d
-10:42:42.564 Information Orleans.Runtime.MembershipService.MembershipTableSystemTarget: GrainBasedMembershipTable Activated.
-10:42:42.564 Information Orleans.Runtime.Silo: -------------- Started silo S127.0.0.1:11119:149424162, ConsistentHashCode 7429FCC5 --------------
-10:42:42.564 Information Orleans.Hosting.SiloHostedService: Starting Orleans Silo.
-10:42:42.565 Information Orleans.Runtime.SiloOptionsLogger: Configuration Orleans.Configuration.ActivationCountBasedPlacementOptions:
+13:17:23.960 Information Orleans.Runtime.Silo: Silo starting with GC settings: ServerGC=False GCLatencyMode=Interactive
+13:17:23.960 Warning     Orleans.Runtime.Silo: Note: Silo not running with ServerGC turned on - recommend checking app config : <configuration>-<runtime>-<gcServer enabled="true">
+13:17:23.960 Warning     Orleans.Runtime.Silo: Note: ServerGC only kicks in on multi-core systems (settings enabling ServerGC have no effect on single-core machines).
+13:17:23.961 Information Orleans.Runtime.Silo: -------------- Initializing silo on host Andres-MacBook-Pro.local MachineName Andres-MacBook-Pro at 127.0.0.1:11119, gen 149606243 --------------
+13:17:23.961 Information Orleans.Runtime.Silo: Starting silo Silo_1d782
+13:17:23.979 Information Orleans.Runtime.MembershipService.MembershipTableSystemTarget: GrainBasedMembershipTable Activated.
+13:17:23.980 Information Orleans.Runtime.Silo: -------------- Started silo S127.0.0.1:11119:149606243, ConsistentHashCode D1CEDA59 --------------
+13:17:23.980 Information Orleans.Hosting.SiloHostedService: Starting Orleans Silo.
+13:17:23.980 Information Orleans.Runtime.SiloOptionsLogger: Configuration Orleans.Configuration.ActivationCountBasedPlacementOptions:
 ChooseOutOf: 2
 
-10:42:42.565 Information Orleans.Runtime.SiloOptionsLogger: Configuration Orleans.Configuration.ClusterMembershipOptions:
+13:17:23.980 Information Orleans.Runtime.SiloOptionsLogger: Configuration Orleans.Configuration.ClusterMembershipOptions:
 NumMissedTableIAmAliveLimit: 3
 LivenessEnabled: True
 ProbeTimeout: 00:00:05
@@ -32,31 +32,31 @@ EnableIndirectProbes: True
 EnableConnectionLivenessCheck: True
 EvictWhenMaxJoinAttemptTimeExceeded: True
 
-10:42:42.565 Information Orleans.Runtime.SiloOptionsLogger: Configuration Orleans.Configuration.ClusterOptions:
-ClusterId: poc1031memoryEbig05b548
-ServiceId: poc1031memoryEbig05b548
+13:17:23.980 Information Orleans.Runtime.SiloOptionsLogger: Configuration Orleans.Configuration.ClusterOptions:
+ClusterId: poc1031memoryEbig88ccc2
+ServiceId: poc1031memoryEbig88ccc2
 
-10:42:42.565 Information Orleans.Runtime.SiloOptionsLogger: Configuration Orleans.Configuration.ConnectionOptions:
+13:17:23.980 Information Orleans.Runtime.SiloOptionsLogger: Configuration Orleans.Configuration.ConnectionOptions:
 ProtocolVersion: Version1
 ConnectionsPerEndpoint: 1
 ConnectionRetryDelay: 00:00:01
 OpenConnectionTimeout: 00:00:05
 
-10:42:42.565 Information Orleans.Runtime.SiloOptionsLogger: Configuration Orleans.Configuration.ConsistentRingOptions:
+13:17:23.980 Information Orleans.Runtime.SiloOptionsLogger: Configuration Orleans.Configuration.ConsistentRingOptions:
 NumVirtualBucketsConsistentRing: 30
 UseVirtualBucketsConsistentRing: True
 
-10:42:42.565 Information Orleans.Runtime.SiloOptionsLogger: Configuration Orleans.Configuration.DevelopmentClusterMembershipOptions:
+13:17:23.980 Information Orleans.Runtime.SiloOptionsLogger: Configuration Orleans.Configuration.DevelopmentClusterMembershipOptions:
 PrimarySiloEndpoint: 127.0.0.1:11119
 
-10:42:42.565 Information Orleans.Runtime.SiloOptionsLogger: Configuration Orleans.Configuration.EndpointOptions:
+13:17:23.980 Information Orleans.Runtime.SiloOptionsLogger: Configuration Orleans.Configuration.EndpointOptions:
 AdvertisedIPAddress: 127.0.0.1
 SiloPort: 11119
 GatewayPort: 30008
 SiloListeningEndpoint: 
 GatewayListeningEndpoint: 
 
-10:42:42.565 Information Orleans.Runtime.SiloOptionsLogger: Configuration Orleans.Configuration.GrainCollectionOptions:
+13:17:23.980 Information Orleans.Runtime.SiloOptionsLogger: Configuration Orleans.Configuration.GrainCollectionOptions:
 CollectionQuantum: 00:00:02
 CollectionAge: 00:00:10
 ActivationTimeout: 00:00:30
@@ -66,7 +66,7 @@ MemoryUsagePollingPeriod: 00:00:05
 MemoryUsageLimitPercentage: 80
 MemoryUsageTargetPercentage: 75
 
-10:42:42.565 Information Orleans.Runtime.SiloOptionsLogger: Configuration Orleans.Configuration.GrainDirectoryOptions:
+13:17:23.980 Information Orleans.Runtime.SiloOptionsLogger: Configuration Orleans.Configuration.GrainDirectoryOptions:
 CachingStrategy: LRU
 CacheSize: 1000000
 PartitionsPerSilo: 1
@@ -74,22 +74,22 @@ MaximumCacheTTL: 00:04:00
 LazyDeregistrationDelay: 00:01:00
 RangeLeaseDuration: 00:00:30
 
-10:42:42.565 Information Orleans.Runtime.SiloOptionsLogger: Configuration Orleans.Configuration.GrainVersioningOptions:
+13:17:23.980 Information Orleans.Runtime.SiloOptionsLogger: Configuration Orleans.Configuration.GrainVersioningOptions:
 DefaultCompatibilityStrategy: BackwardCompatible
 DefaultVersionSelectorStrategy: AllCompatibleVersions
 
-10:42:42.565 Information Orleans.Runtime.SiloOptionsLogger: Configuration Orleans.Configuration.HashRingStreamQueueMapperOptions-poc:
+13:17:23.980 Information Orleans.Runtime.SiloOptionsLogger: Configuration Orleans.Configuration.HashRingStreamQueueMapperOptions-poc:
 TotalQueueCount: 1
 
-10:42:42.565 Information Orleans.Runtime.SiloOptionsLogger: Configuration Orleans.Configuration.HashRingStreamQueueMapperOptions-poc:
+13:17:23.980 Information Orleans.Runtime.SiloOptionsLogger: Configuration Orleans.Configuration.HashRingStreamQueueMapperOptions-poc:
 TotalQueueCount: 1
 
-10:42:42.565 Information Orleans.Runtime.SiloOptionsLogger: Configuration Orleans.Configuration.LoadSheddingOptions:
+13:17:23.980 Information Orleans.Runtime.SiloOptionsLogger: Configuration Orleans.Configuration.LoadSheddingOptions:
 LoadSheddingEnabled: False
 CpuThreshold: 95
 MemoryThreshold: 90
 
-10:42:42.565 Information Orleans.Runtime.SiloOptionsLogger: Configuration Orleans.Configuration.ResourceOptimizedPlacementOptions:
+13:17:23.980 Information Orleans.Runtime.SiloOptionsLogger: Configuration Orleans.Configuration.ResourceOptimizedPlacementOptions:
 CpuUsageWeight: 40
 MemoryUsageWeight: 20
 AvailableMemoryWeight: 20
@@ -97,14 +97,14 @@ MaxAvailableMemoryWeight: 5
 ActivationCountWeight: 15
 LocalSiloPreferenceMargin: 5
 
-10:42:42.565 Information Orleans.Runtime.SiloOptionsLogger: Configuration Orleans.Configuration.SchedulingOptions:
+13:17:23.980 Information Orleans.Runtime.SiloOptionsLogger: Configuration Orleans.Configuration.SchedulingOptions:
 DelayWarningThreshold: 00:00:10
 ActivationSchedulingQuantum: 00:00:00.1000000
 TurnWarningLengthThreshold: 00:00:01
 MaxPendingWorkItemsSoftLimit: 0
 StoppedActivationWarningInterval: 00:01:00
 
-10:42:42.565 Information Orleans.Runtime.SiloOptionsLogger: Configuration Orleans.Configuration.SiloMessagingOptions:
+13:17:23.981 Information Orleans.Runtime.SiloOptionsLogger: Configuration Orleans.Configuration.SiloMessagingOptions:
 SiloSenderQueues: 0
 GatewaySenderQueues: 0
 MaxForwardCount: 2
@@ -134,75 +134,75 @@ CancelRequestOnTimeout: False
 WaitForCancellationAcknowledgement: False
 CancelUnknownRequestOnStatusUpdate: False
 
-10:42:42.565 Information Orleans.Runtime.SiloOptionsLogger: Configuration Orleans.Configuration.SiloOptions:
-SiloName: Silo_e669d
+13:17:23.981 Information Orleans.Runtime.SiloOptionsLogger: Configuration Orleans.Configuration.SiloOptions:
+SiloName: Silo_1d782
 
-10:42:42.565 Information Orleans.Runtime.SiloOptionsLogger: Configuration Orleans.Configuration.StatelessWorkerOptions:
+13:17:23.981 Information Orleans.Runtime.SiloOptionsLogger: Configuration Orleans.Configuration.StatelessWorkerOptions:
 RemoveIdleWorkers: True
 IdleWorkersInspectionPeriod: 00:00:00.5000000
 MinIdleCyclesBeforeRemoval: 1
 
-10:42:42.565 Information Orleans.Runtime.SiloOptionsLogger: Configuration Orleans.Configuration.StreamCacheEvictionOptions-poc:
+13:17:23.981 Information Orleans.Runtime.SiloOptionsLogger: Configuration Orleans.Configuration.StreamCacheEvictionOptions-poc:
 DataMinTimeInCache: 00:00:01
 DataMaxAgeInCache: 00:00:40
 MetadataMinTimeInCache: 00:00:05
 
-10:42:42.565 Information Orleans.Runtime.SiloOptionsLogger: Configuration Orleans.Configuration.StreamCacheEvictionOptions-poc:
+13:17:23.981 Information Orleans.Runtime.SiloOptionsLogger: Configuration Orleans.Configuration.StreamCacheEvictionOptions-poc:
 DataMinTimeInCache: 00:00:01
 DataMaxAgeInCache: 00:00:40
 MetadataMinTimeInCache: 00:00:05
 
-10:42:42.565 Information Orleans.Runtime.SiloOptionsLogger: Configuration Orleans.Configuration.StreamPubSubOptions-poc:
+13:17:23.981 Information Orleans.Runtime.SiloOptionsLogger: Configuration Orleans.Configuration.StreamPubSubOptions-poc:
 PubSubType: ImplicitOnly
 
-10:42:42.565 Information Orleans.Runtime.SiloOptionsLogger: Configuration Orleans.Configuration.StreamPullingAgentOptions-poc:
+13:17:23.981 Information Orleans.Runtime.SiloOptionsLogger: Configuration Orleans.Configuration.StreamPullingAgentOptions-poc:
 BatchContainerBatchSize: 1
 GetQueueMsgsTimerPeriod: 00:00:00.1000000
 InitQueueTimeout: 00:00:05
 MaxEventDeliveryTime: 00:01:00
 StreamInactivityPeriod: 00:00:20
 
-10:42:42.565 Information Orleans.Runtime.SiloOptionsLogger: Configuration Orleans.Configuration.StreamStatisticOptions-poc:
+13:17:23.981 Information Orleans.Runtime.SiloOptionsLogger: Configuration Orleans.Configuration.StreamStatisticOptions-poc:
 StatisticMonitorWriteInterval: 00:00:01
 
-10:42:42.566 Information Orleans.Runtime.SiloOptionsLogger: Configuration Orleans.Configuration.StreamStatisticOptions-poc:
+13:17:23.981 Information Orleans.Runtime.SiloOptionsLogger: Configuration Orleans.Configuration.StreamStatisticOptions-poc:
 StatisticMonitorWriteInterval: 00:00:01
 
-10:42:42.566 Information Orleans.Runtime.Silo: Silo Start()
-10:42:42.566 Information Orleans.Runtime.MembershipService.MembershipTableManager: MembershipOracle starting on host Andres-MacBook-Pro.local with SiloAddress S127.0.0.1:11119:149424162 at 2026-09-26 10:42:42.532 GMT
-10:42:42.566 Information Orleans.Runtime.Silo: Init grain services took 0 milliseconds to finish
-10:42:42.566 Information Orleans.Runtime.MembershipService.SystemTargetBasedMembershipTable: Connected to membership table provider.
-10:42:42.566 Information Orleans.Runtime.MembershipService.MembershipAgent: Joining
-10:42:42.566 Information Orleans.Runtime.MembershipService.MembershipAgent: -BecomeActive
-10:42:42.566 Information Orleans.Runtime.MembershipService.MembershipAgent: -Finished BecomeActive.
-10:42:42.566 Information Orleans.Runtime.Providers.SiloProviderRuntime: Successfully created queue balancer of type Orleans.Streams.ConsistentRingQueueBalancer for stream provider poc
-10:42:42.566 Information Orleans.Streams.PersistentStreamPullingManager.poc: Created PersistentStreamPullingManager for Stream Provider poc.
-10:42:42.567 Information Orleans.Streams.PersistentStreamPullingManager.poc: Init.
-10:42:42.567 Information Orleans.Streams.PersistentStreamPullingManager.poc: Initialize: I am now responsible for 1 queues: [poc-0].
-10:42:42.567 Information Orleans.Streams.PersistentStreamPullingManager.poc: Starting agents for 1 queues: [poc-0].
-10:42:42.567 Information Orleans.Streams.poc: Created PersistentStreamPullingAgent sys.svc.stream.agent/127.0.0.1:11119@149424162+poc_1_poc-0-0x00000000 for Stream Provider poc on silo S127.0.0.1:11119:149424162 for Queue poc-0-0x00000000.
-10:42:42.567 Information Orleans.Streams.poc: Init of PersistentStreamPullingAgent sys.svc.stream.agent/127.0.0.1:11119@149424162+poc_1_poc-0-0x00000000 on silo S127.0.0.1:11119:149424162 for queue poc-0-0x00000000.
-10:42:42.567 Information Orleans.Streams.poc: Taking queue poc-0-0x00000000 under my responsibility.
-10:42:42.567 Information Orleans.Streams.PersistentStreamPullingManager.poc: Added 1 new queues: [poc-0]. Now own total of 1 queues: [poc-0].
-10:42:42.567 Information Orleans.Streams.PersistentStreamPullingManager.poc: Started agents.
-10:42:42.567 Information Orleans.Hosting.SiloHostedService: Orleans Silo started.
-10:42:42.567 Information Polly: Execution attempt. Source: 'Orleans.Placement/(null)/Retry', Operation Key: '', Result: 'S127.0.0.1:11119:149424162', Handled: 'False', Attempt: '0', Execution Time: 0.0552ms
-10:42:42.567 Information Polly: Resilience pipeline executed. Source: 'Orleans.Placement/(null)', Operation Key: '', Result: 'S127.0.0.1:11119:149424162', Execution Time: 0.0824ms
-10:42:42.568 Information Polly: Execution attempt. Source: 'Orleans.Placement/(null)/Retry', Operation Key: '', Result: 'S127.0.0.1:11119:149424162', Handled: 'False', Attempt: '0', Execution Time: 0.0077ms
-10:42:42.568 Information Polly: Resilience pipeline executed. Source: 'Orleans.Placement/(null)', Operation Key: '', Result: 'S127.0.0.1:11119:149424162', Execution Time: 0.0261ms
-10:42:42.654 Debug       Orleans.Streams.poc: Got back 1 subscribers for stream poc/consumer/warmup-05b548.
-10:42:42.669 Information Polly: Execution attempt. Source: 'Orleans.Placement/(null)/Retry', Operation Key: '', Result: 'S127.0.0.1:11119:149424162', Handled: 'False', Attempt: '0', Execution Time: 0.0184ms
-10:42:42.669 Information Polly: Resilience pipeline executed. Source: 'Orleans.Placement/(null)', Operation Key: '', Result: 'S127.0.0.1:11119:149424162', Execution Time: 0.0677ms
-10:42:42.755 Debug       Orleans.Streams.poc: Got back 0 subscribers for stream poc/filler/05b548.
-10:42:42.755 Debug       Orleans.Streams.poc: Got back 1 subscribers for stream poc/consumer/e-big-05b548.
-10:42:54.551 Information Orleans.Runtime.ActivationCollector: Deactivating '1' idle activations.
-10:42:57.873 Information Orleans.Hosting.SiloHostedService: Stopping Orleans Silo
-10:42:57.873 Information Orleans.Streams.PersistentStreamPullingManager.poc: Stopping agents for 1 queues: [poc-0].
-10:42:57.873 Information Orleans.Streams.PersistentStreamPullingManager.poc: About to remove 1 agents from my responsibility: [poc-0].
-10:42:57.873 Information Orleans.Streams.poc: Shutdown of PersistentStreamPullingAgent responsible for queue: poc-0-0x00000000
-10:42:57.874 Information Orleans.Streams.poc: Unregister PersistentStreamPullingAgent Producer for stream poc/consumer/warmup-05b548.
-10:42:57.874 Information Orleans.Streams.poc: Unregister PersistentStreamPullingAgent Producer for stream poc/filler/05b548.
-10:42:57.874 Information Orleans.Streams.poc: Unregister PersistentStreamPullingAgent Producer for stream poc/consumer/e-big-05b548.
-10:42:57.874 Information Orleans.Streams.PersistentStreamPullingManager.poc: Removed 1 queues: [poc-0]. Now own total of 0 queues: [].
-10:42:57.874 Information Orleans.Streams.PersistentStreamPullingManager.poc: Stopped agents.
-10:42:57.892 Information Orleans.Hosting.SiloHostedService: Orleans Silo stopped.
+13:17:23.981 Information Orleans.Runtime.Silo: Silo Start()
+13:17:23.981 Information Orleans.Runtime.Silo: Init grain services took 0 milliseconds to finish
+13:17:23.981 Information Orleans.Runtime.MembershipService.MembershipTableManager: MembershipOracle starting on host Andres-MacBook-Pro.local with SiloAddress S127.0.0.1:11119:149606243 at 2026-09-28 13:17:23.943 GMT
+13:17:23.981 Information Orleans.Runtime.MembershipService.SystemTargetBasedMembershipTable: Connected to membership table provider.
+13:17:23.981 Information Orleans.Runtime.MembershipService.MembershipAgent: Joining
+13:17:23.982 Information Orleans.Runtime.MembershipService.MembershipAgent: -BecomeActive
+13:17:23.982 Information Orleans.Runtime.MembershipService.MembershipAgent: -Finished BecomeActive.
+13:17:23.982 Information Orleans.Runtime.Providers.SiloProviderRuntime: Successfully created queue balancer of type Orleans.Streams.ConsistentRingQueueBalancer for stream provider poc
+13:17:23.982 Information Orleans.Streams.PersistentStreamPullingManager.poc: Created PersistentStreamPullingManager for Stream Provider poc.
+13:17:23.982 Information Orleans.Streams.PersistentStreamPullingManager.poc: Init.
+13:17:23.982 Information Orleans.Streams.PersistentStreamPullingManager.poc: Initialize: I am now responsible for 1 queues: [poc-0].
+13:17:23.982 Information Orleans.Streams.PersistentStreamPullingManager.poc: Starting agents for 1 queues: [poc-0].
+13:17:23.982 Information Orleans.Streams.poc: Created PersistentStreamPullingAgent sys.svc.stream.agent/127.0.0.1:11119@149606243+poc_1_poc-0-0x00000000 for Stream Provider poc on silo S127.0.0.1:11119:149606243 for Queue poc-0-0x00000000.
+13:17:23.982 Information Orleans.Streams.poc: Init of PersistentStreamPullingAgent sys.svc.stream.agent/127.0.0.1:11119@149606243+poc_1_poc-0-0x00000000 on silo S127.0.0.1:11119:149606243 for queue poc-0-0x00000000.
+13:17:23.982 Information Orleans.Streams.poc: Taking queue poc-0-0x00000000 under my responsibility.
+13:17:23.982 Information Orleans.Streams.PersistentStreamPullingManager.poc: Added 1 new queues: [poc-0]. Now own total of 1 queues: [poc-0].
+13:17:23.982 Information Orleans.Streams.PersistentStreamPullingManager.poc: Started agents.
+13:17:23.982 Information Orleans.Hosting.SiloHostedService: Orleans Silo started.
+13:17:23.983 Information Polly: Execution attempt. Source: 'Orleans.Placement/(null)/Retry', Operation Key: '', Result: 'S127.0.0.1:11119:149606243', Handled: 'False', Attempt: '0', Execution Time: 0.0605ms
+13:17:23.983 Information Polly: Resilience pipeline executed. Source: 'Orleans.Placement/(null)', Operation Key: '', Result: 'S127.0.0.1:11119:149606243', Execution Time: 0.0895ms
+13:17:23.983 Information Polly: Execution attempt. Source: 'Orleans.Placement/(null)/Retry', Operation Key: '', Result: 'S127.0.0.1:11119:149606243', Handled: 'False', Attempt: '0', Execution Time: 0.0098ms
+13:17:23.983 Information Polly: Resilience pipeline executed. Source: 'Orleans.Placement/(null)', Operation Key: '', Result: 'S127.0.0.1:11119:149606243', Execution Time: 0.0307ms
+13:17:24.052 Debug       Orleans.Streams.poc: Got back 1 subscribers for stream poc/consumer/warmup-88ccc2.
+13:17:24.083 Information Polly: Execution attempt. Source: 'Orleans.Placement/(null)/Retry', Operation Key: '', Result: 'S127.0.0.1:11119:149606243', Handled: 'False', Attempt: '0', Execution Time: 0.0196ms
+13:17:24.083 Information Polly: Resilience pipeline executed. Source: 'Orleans.Placement/(null)', Operation Key: '', Result: 'S127.0.0.1:11119:149606243', Execution Time: 0.0742ms
+13:17:24.153 Debug       Orleans.Streams.poc: Got back 0 subscribers for stream poc/filler/88ccc2.
+13:17:24.153 Debug       Orleans.Streams.poc: Got back 1 subscribers for stream poc/consumer/e-big-88ccc2.
+13:17:35.965 Information Orleans.Runtime.ActivationCollector: Deactivating '1' idle activations.
+13:17:39.291 Information Orleans.Hosting.SiloHostedService: Stopping Orleans Silo
+13:17:39.296 Information Orleans.Streams.PersistentStreamPullingManager.poc: Stopping agents for 1 queues: [poc-0].
+13:17:39.296 Information Orleans.Streams.PersistentStreamPullingManager.poc: About to remove 1 agents from my responsibility: [poc-0].
+13:17:39.296 Information Orleans.Streams.poc: Shutdown of PersistentStreamPullingAgent responsible for queue: poc-0-0x00000000
+13:17:39.297 Information Orleans.Streams.poc: Unregister PersistentStreamPullingAgent Producer for stream poc/consumer/warmup-88ccc2.
+13:17:39.297 Information Orleans.Streams.poc: Unregister PersistentStreamPullingAgent Producer for stream poc/filler/88ccc2.
+13:17:39.297 Information Orleans.Streams.poc: Unregister PersistentStreamPullingAgent Producer for stream poc/consumer/e-big-88ccc2.
+13:17:39.297 Information Orleans.Streams.PersistentStreamPullingManager.poc: Removed 1 queues: [poc-0]. Now own total of 0 queues: [].
+13:17:39.297 Information Orleans.Streams.PersistentStreamPullingManager.poc: Stopped agents.
+13:17:39.314 Information Orleans.Hosting.SiloHostedService: Orleans Silo stopped.
