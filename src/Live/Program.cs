@@ -311,12 +311,12 @@ public sealed class Lane : IHostedService
         var (purgedBefore, purgedAfter) = (before.Cache.LastPurgedToken, after.Cache.LastPurgedToken);
         foreach (var (key, p) in purgedAfter.Where(kv => !purgedBefore.TryGetValue(kv.Key, out var old) || old.Seq != kv.Value.Seq))
         {
-            feed.Add("cache", key, "Purged", $"PooledQueueCache purged token {p.Seq}: lastPurgedToken = {p.Seq}");
+            feed.Add("cache", key, "Purged", $"the cache dropped the stream's event {p.Seq}, lastPurgedToken = {p.Seq}");
         }
 
         foreach (var key in purgedBefore.Keys.Except(purgedAfter.Keys))
         {
-            feed.Add("cache", key, "PurgeMetadataExpired", $"lastPurgedToken removed after MetadataMinTimeInCache ({settings.MetadataMinTimeInCache.TotalSeconds}s)");
+            feed.Add("cache", key, "PurgeMetadataExpired", $"the cache forgot lastPurgedToken after MetadataMinTimeInCache ({settings.MetadataMinTimeInCache.TotalSeconds} s)");
         }
 
         var cursorsBefore = before.Streams.ToDictionary(s => s.Key, s => s.Consumers.FirstOrDefault());
@@ -325,7 +325,7 @@ public sealed class Lane : IHostedService
             var c = s.Consumers.FirstOrDefault();
             if (c is not null && (!cursorsBefore.TryGetValue(s.Key, out var old) || old is null || old.Cursor != c.Cursor || old.CursorSeq != c.CursorSeq))
             {
-                feed.Add("agent", s.Key, "Cursor", $"cache cursor {c.Cursor} at {c.CursorSeq}");
+                feed.Add("agent", s.Key, "Cursor", $"{c.Cursor} at {c.CursorSeq}");
             }
         }
     }
@@ -334,9 +334,9 @@ public sealed class Lane : IHostedService
     {
         var (id, kind, detail) = e switch
         {
-            StreamingEvents.SubscriptionAdded a => (a.StreamId, "SubscriptionAdded", "RegisterStream: the pulling agent registered S and added its implicit subscriber"),
-            StreamingEvents.SubscriptionAttached a => (a.StreamId, "SubscriptionAttached", "handshake done, cache cursor set"),
-            StreamingEvents.StreamInactive i => (i.StreamId, "StreamInactive", $"CleanupPubSubCache removed S after StreamInactivityPeriod ({i.InactivityPeriod.TotalSeconds}s)"),
+            StreamingEvents.SubscriptionAdded a => (a.StreamId, "SubscriptionAdded", "RegisterStream: the agent registers the stream and subscribes the grain"),
+            StreamingEvents.SubscriptionAttached a => (a.StreamId, "SubscriptionAttached", "handshake done, cursor set"),
+            StreamingEvents.StreamInactive i => (i.StreamId, "StreamInactive", $"CleanupPubSubCache: the agent forgets the stream after StreamInactivityPeriod ({i.InactivityPeriod.TotalSeconds} s)"),
             _ => (default, "", ""),
         };
         if (kind != "" && id.GetNamespace() == Names.ConsumerNamespace)

@@ -37,29 +37,29 @@ public sealed class Scenarios(string transport, Version orleansVersion, string l
 {
     public static readonly Variant[] All =
     [
-        new("A", "Handshake path: grain kept alive by Ping, agent forgets S, S's token and its purge metadata are evicted",
+        new("A", "Handshake path: the agent forgets the quiet stream while Ping keeps the grain active",
             "A", Timings.DataMaxAgeInCache, Timings.MetadataMinTimeInCache, Timings.QuietPeriod, KeepAlive: true, Miss: true),
-        new("B", "Control: as A, but the grain is idle-collected (no Ping), so the new activation has no expectedToken",
+        new("B", "As A, but without Ping, so Orleans removes the idle grain",
             "A", Timings.DataMaxAgeInCache, Timings.MetadataMinTimeInCache, Timings.QuietPeriod, KeepAlive: false, Miss: true),
-        new("C", "Genuine mid-stream miss: slow consumer while the partition moves on",
+        new("C", "Slow consumer: the cache drops events before the grain gets them",
             "C", Timings.DataMaxAgeInCache, Timings.MetadataMinTimeInCache, TimeSpan.Zero, KeepAlive: true, Miss: true),
-        new("D", "Control: as A, but the cache still remembers S's last purged token (MetadataMinTimeInCache at its 10 min default)",
+        new("D", "As A, but the cache still has the stream's lastPurgedToken (MetadataMinTimeInCache 10 min)",
             "A", Timings.DataMaxAgeInCache, StreamCacheEvictionOptions.DefaultMetadataMinTimeInCache, Timings.QuietPeriod, KeepAlive: true, Miss: false),
-        new("E", "Idle-cursor path: as A, but event 2 comes while the agent still has S registered (quiet longer than MetadataMinTimeInCache, shorter than StreamInactivityPeriod)",
+        new("E", "Idle-cursor path: event 2 comes while the agent still knows the quiet stream",
             "E", Timings.DataMaxAgeInCache, Timings.MetadataMinTimeInCache, Timings.WarmQuietPeriod, KeepAlive: true, Miss: true),
-        new("A-mid", "As A, DataMaxAgeInCache doubled but still shorter than the quiet period",
+        new("A-mid", "As A, DataMaxAgeInCache doubled, still shorter than the quiet time",
             "A", Timings.MidDataMaxAgeInCache, Timings.MetadataMinTimeInCache, Timings.QuietPeriod, KeepAlive: true, Miss: true),
-        new("E-mid", "As E, DataMaxAgeInCache doubled; quiet still between DataMaxAgeInCache + MetadataMinTimeInCache and StreamInactivityPeriod",
+        new("E-mid", "As E, DataMaxAgeInCache doubled, still shorter than the quiet time",
             "E", Timings.MidDataMaxAgeInCache, Timings.MetadataMinTimeInCache, Timings.MidWarmQuietPeriod, KeepAlive: true, Miss: true),
-        new("A-big", "As A, DataMaxAgeInCache longer than the quiet period",
+        new("A-big", "As A, DataMaxAgeInCache longer than the quiet time",
             "A", Timings.BigDataMaxAgeInCache, Timings.MetadataMinTimeInCache, Timings.QuietPeriod, KeepAlive: true, Miss: false),
-        new("E-big", "As E, DataMaxAgeInCache longer than the quiet period",
+        new("E-big", "As E, DataMaxAgeInCache longer than the quiet time",
             "E", Timings.BigDataMaxAgeInCache, Timings.MetadataMinTimeInCache, Timings.WarmQuietPeriod, KeepAlive: true, Miss: false),
-        new("A-meta", "As A, DataMaxAgeInCache unchanged, MetadataMinTimeInCache longer than the quiet period",
+        new("A-meta", "As A, MetadataMinTimeInCache longer than the quiet time",
             "A", Timings.DataMaxAgeInCache, Timings.BigMetadataMinTimeInCache, Timings.QuietPeriod, KeepAlive: true, Miss: false),
-        new("E-meta", "As E, DataMaxAgeInCache unchanged, MetadataMinTimeInCache longer than the quiet period",
+        new("E-meta", "As E, MetadataMinTimeInCache longer than the quiet time",
             "E", Timings.DataMaxAgeInCache, Timings.BigMetadataMinTimeInCache, Timings.WarmQuietPeriod, KeepAlive: true, Miss: false),
-        new("C-big", "As C, DataMaxAgeInCache longer than the consumer's lag",
+        new("C-big", "As C, DataMaxAgeInCache longer than the grain's delay",
             "C", Timings.BigDataMaxAgeInCache, Timings.MetadataMinTimeInCache, TimeSpan.Zero, KeepAlive: true, Miss: false),
     ];
 
@@ -94,7 +94,7 @@ public sealed class Scenarios(string transport, Version orleansVersion, string l
             using var fillersCts = new CancellationTokenSource();
             var fillers = RunFillers(client.GetStreamProvider(Names.Provider), suffix, timeline, fillersCts.Token);
             var key = $"{id.ToLowerInvariant()}-{suffix}";
-            Step(timeline, key, $"S = {Names.ConsumerNamespace}/{key}, DataMaxAgeInCache = {variant.DataMaxAgeInCache.TotalSeconds}s, MetadataMinTimeInCache = {variant.MetadataMinTimeInCache.TotalSeconds}s");
+            Step(timeline, key, $"stream {Names.ConsumerNamespace}/{key}, DataMaxAgeInCache {variant.DataMaxAgeInCache.TotalSeconds} s, MetadataMinTimeInCache {variant.MetadataMinTimeInCache.TotalSeconds} s");
             var result = variant.Shape switch
             {
                 "A" or "E" => await QuietStream(client, timeline, cache, key, variant),
@@ -145,16 +145,16 @@ public sealed class Scenarios(string transport, Version orleansVersion, string l
         var (id, keepAlive, quiet) = (variant.Id, variant.KeepAlive, variant.Quiet);
         var grain = client.GetGrain<IConsumerGrain>(key);
 
-        Step(timeline, key, "publish event 1 on S via grain.Update(1)");
+        Step(timeline, key, "grain.Update(1) publishes event 1");
         await grain.Update(1);
         await WaitFor(() => timeline.Has(key, "OnNextAsync", 1), TimeSpan.FromSeconds(30));
 
         using var pingCts = new CancellationTokenSource();
         var pinger = keepAlive ? RunPinger(grain, pingCts.Token) : Task.FromResult(0);
-        Step(timeline, key, $"quiet period {quiet.TotalSeconds}s: no events on S, fillers keep the partition moving, Ping={(keepAlive ? $"every {Timings.PingInterval.TotalSeconds}s" : "off")}");
+        Step(timeline, key, $"quiet for {quiet.TotalSeconds} s while other streams keep publishing, {(keepAlive ? $"Ping() every {Timings.PingInterval.TotalSeconds} s keeps the grain active" : "no Ping()")}");
         await Task.Delay(quiet);
 
-        Step(timeline, key, $"publish event 2 on S via grain.Update(2); cache holds {cache.Messages} messages");
+        Step(timeline, key, $"grain.Update(2) publishes event 2, the cache holds {cache.Messages} messages");
         await grain.Update(2);
         await WaitFor(() => timeline.Has(key, "OnNextAsync", 2), TimeSpan.FromSeconds(30));
         await Task.Delay(TimeSpan.FromSeconds(3));
@@ -163,7 +163,7 @@ public sealed class Scenarios(string transport, Version orleansVersion, string l
         var pings = await pinger;
         if (keepAlive)
         {
-            Step(timeline, key, $"pinged {pings} times");
+            Step(timeline, key, $"{pings} Ping() calls");
         }
 
         var r = Evaluate(timeline, key, published: [1, 2]);
@@ -196,14 +196,14 @@ public sealed class Scenarios(string transport, Version orleansVersion, string l
         const int slowMs = 6000;
         var stream = client.GetStreamProvider(Names.Provider).GetStream<Payload>(StreamId.Create(Names.ConsumerNamespace, key));
 
-        Step(timeline, key, $"publish events 1..{burst} on S; event 1 takes {slowMs / 1000}s to process");
+        Step(timeline, key, $"publish events 1..{burst}, the grain takes {slowMs / 1000} s for event 1");
         for (var v = 1; v <= burst; v++)
         {
             await stream.OnNextAsync(new Payload(v, v == 1 ? slowMs : 0));
         }
 
         await Task.Delay(TimeSpan.FromSeconds(10));
-        Step(timeline, key, $"publish event {burst + 1} on S (after the slow period)");
+        Step(timeline, key, $"publish event {burst + 1} after the slow part");
         await stream.OnNextAsync(new Payload(burst + 1));
         await WaitFor(() => timeline.Has(key, "OnNextAsync", burst + 1), TimeSpan.FromSeconds(10));
         await Task.Delay(TimeSpan.FromSeconds(3));
@@ -244,7 +244,7 @@ public sealed class Scenarios(string transport, Version orleansVersion, string l
     {
         var stream = streams.GetStream<Payload>(StreamId.Create(Names.FillerNamespace, suffix));
         var count = 0;
-        timeline.Add("driver", "", "Fillers", $"start: 1 event every {Timings.FillerInterval.TotalMilliseconds} ms on {Names.FillerNamespace}/{suffix} (same partition, no consumer)");
+        timeline.Add("driver", "", "Fillers", $"other stream {Names.FillerNamespace}/{suffix}: 1 event every {Timings.FillerInterval.TotalMilliseconds} ms on the same partition, no consumer");
         try
         {
             while (!ct.IsCancellationRequested)

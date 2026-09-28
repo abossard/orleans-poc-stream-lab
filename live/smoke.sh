@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Smoke test against the running stack (cd live && docker compose up --build):
-# publish on each lane's live silo and expect OnNextAsync for that stream on its /api/events feed.
+# publish on each version's live silo and expect OnNextAsync for that stream on its /api/events feed.
 set -euo pipefail
 
 for url in ${LANES:-http://localhost:8102 http://localhost:8103}; do

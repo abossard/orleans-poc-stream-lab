@@ -23,16 +23,16 @@ const MAIN_SCENARIOS = ['A', 'B', 'C', 'D', 'E']
 
 // Rows: 0 pulling agent, 1 grain callbacks, 2 events on S, 3 queue cache.
 const MARKERS: Record<string, { glyph: string; row: number; cls: string; label: string }> = {
-  SubscriptionAdded: { glyph: 'R', row: 0, cls: 'agent', label: 'stream registered (RegisterStream)' },
-  GetSequenceToken: { glyph: '◆', row: 0, cls: 'hs', label: 'handshake: GetSequenceToken' },
-  StreamInactive: { glyph: 'I', row: 0, cls: 'agent', label: 'removed after StreamInactivityPeriod' },
-  Cursor: { glyph: '▾', row: 0, cls: 'cursor', label: 'cache cursor moved' },
-  OnErrorAsync: { glyph: '▲', row: 1, cls: 'err', label: 'OnErrorAsync(QueueCacheMissException)' },
-  Deactivated: { glyph: 'D', row: 1, cls: 'dim', label: 'activation collected' },
+  SubscriptionAdded: { glyph: 'R', row: 0, cls: 'agent', label: 'agent registers the stream' },
+  GetSequenceToken: { glyph: '◆', row: 0, cls: 'hs', label: 'handshake: agent asks the grain for its token' },
+  StreamInactive: { glyph: 'I', row: 0, cls: 'agent', label: 'agent forgets the quiet stream' },
+  Cursor: { glyph: '▾', row: 0, cls: 'cursor', label: 'cursor moves' },
+  OnErrorAsync: { glyph: '▲', row: 1, cls: 'err', label: 'grain gets QueueCacheMissException' },
+  Deactivated: { glyph: 'D', row: 1, cls: 'dim', label: 'Orleans removes the idle grain' },
   Published: { glyph: '○', row: 2, cls: 'pub', label: 'published' },
-  OnNextAsync: { glyph: '●', row: 2, cls: 'ok', label: 'OnNextAsync (delivered)' },
-  Purged: { glyph: 'P', row: 3, cls: 'cache', label: "stream's token purged, lastPurgedToken set" },
-  PurgeMetadataExpired: { glyph: 'M', row: 3, cls: 'meta', label: 'lastPurgedToken expired' },
+  OnNextAsync: { glyph: '●', row: 2, cls: 'ok', label: 'delivered (OnNextAsync)' },
+  Purged: { glyph: 'P', row: 3, cls: 'cache', label: "cache drops the stream's event" },
+  PurgeMetadataExpired: { glyph: 'M', row: 3, cls: 'meta', label: 'cache forgets lastPurgedToken' },
 }
 
 const post = (url: string, body?: object) =>
@@ -82,7 +82,7 @@ function App() {
   return (
     <>
       <header className="top">
-        <h1>Orleans persistent streams, live</h1>
+        <h1>Orleans persistent streams: 10.2.1 and 10.3.1 side by side</h1>
         <div className="scenarios">
           {scenarios.filter(s => MAIN_SCENARIOS.includes(s.id)).map(s => (
             <div key={s.id}>
@@ -91,12 +91,12 @@ function App() {
           ))}
         </div>
         <div className="row">
-          Variants:
+          Cache-size variants:
           {scenarios.filter(s => !MAIN_SCENARIOS.includes(s.id)).map(s => (
             <button key={s.id} title={s.title} onClick={() => all(`/api/scenarios/${s.id}/run`)}>{s.id}</button>
           ))}
           <form onSubmit={e => (e.preventDefault(), all('/api/publish', { key }))}>
-            stream key <input value={key} onChange={e => setKey(e.target.value)} size={8} /> <button>Publish on both</button>
+            stream key <input value={key} onChange={e => setKey(e.target.value)} size={8} /> <button>Publish on both versions</button>
           </form>
           <select value={transport} onChange={e => setTransport(e.target.value)}>
             <option>eventhub</option>
@@ -105,8 +105,8 @@ function App() {
           <button onClick={() => all(`/api/reset?transport=${transport}`)}>Reset</button>
         </div>
         <p className="muted">
-          Every scenario runs on its own silo in both lanes at once, then a fresh live silo starts. By hand: publish a key, wait 12 s and publish
-          again for the idle-cursor path (E), or wait 26 s for the handshake path (A).
+          Each scenario runs on Orleans 10.2.1 (left) and 10.3.1 (right) at the same time. When it ends, you can publish by hand: publish a key,
+          then publish it again after 12 s (idle-cursor path) or after 26 s (handshake path).
         </p>
         <p className="legend">
           {Object.values(MARKERS).map(m => (
@@ -115,7 +115,7 @@ function App() {
             </span>
           ))}
           <span>
-            <b className="err">✕</b> lost (published, no OnNextAsync after {LOST_AFTER_MS / 1000} s)
+            <b className="err">✕</b> lost: not delivered after {LOST_AFTER_MS / 1000} s
           </span>
         </p>
       </header>
@@ -200,7 +200,7 @@ function CacheStrip({ state, events }: { state?: State; events: FeedEvent[] }) {
   const marks: { seq: bigint; text: string; cls: string }[] = []
   for (const s of consumerStreams) {
     const c = s.consumers[0]
-    if (c?.cursorSeq) marks.push({ seq: BigInt(c.cursorSeq), text: `▾ cache cursor ${s.key} (${c.cursor})`, cls: 'cursor' })
+    if (c?.cursorSeq) marks.push({ seq: BigInt(c.cursorSeq), text: `▾ cursor ${s.key} (${c.cursor})`, cls: 'cursor' })
   }
   for (const [k, p] of Object.entries(cache.lastPurgedToken).filter(([k]) => !k.startsWith('warmup'))) {
     marks.push({ seq: BigInt(p.seq), text: `M lastPurgedToken ${k} (${p.ageS.toFixed(1)} s old)`, cls: 'meta' })
@@ -227,7 +227,7 @@ function CacheStrip({ state, events }: { state?: State; events: FeedEvent[] }) {
         <div key={m.text} className={`mark ${m.cls} ${m.seq < oldest ? 'stale' : ''}`}>
           <span style={{ left: `${pos(m.seq)}%`, transform: pos(m.seq) > 50 ? 'translateX(-100%)' : undefined }}>
             {m.text} seq {short(String(m.seq))}
-            {m.seq < oldest ? ' older than oldest: purged' : ''}
+            {m.seq < oldest ? ' (purged)' : ''}
           </span>
         </div>
       ))}
@@ -245,9 +245,9 @@ function StreamRow({ streamKey, events, state, x, now }: { streamKey: string; ev
   const cursorStale = !!consumer?.cursorSeq && !!oldest && BigInt(consumer.cursorSeq) < BigInt(oldest)
   const expected = expectedToken(events)
   const registered = stream
-    ? `registered, idle ${stream.idleS.toFixed(0)} s of ${state!.settings.streamInactivityPeriod} s`
+    ? `registered, quiet ${stream.idleS.toFixed(0)} s of ${state!.settings.streamInactivityPeriod} s`
     : lastOf(events, 'SubscriptionAdded', 'StreamInactive')?.kind === 'StreamInactive'
-      ? 'removed as inactive'
+      ? 'forgotten by the agent'
       : 'not registered'
   const metadata = purged
     ? `lastPurgedToken ${short(purged.seq)}`
@@ -261,13 +261,13 @@ function StreamRow({ streamKey, events, state, x, now }: { streamKey: string; ev
         <span className={stream ? 'on' : ''}>{registered}</span>
         {consumer && (
           <span className={cursorStale ? 'bad' : 'on'}>
-            cache cursor {consumer.cursor} at {short(consumer.cursorSeq ?? '?')}
-            {cursorStale ? ', purged' : ''}
+            cursor {consumer.cursor} at {short(consumer.cursorSeq ?? '?')}
+            {cursorStale ? ' (purged)' : ''}
           </span>
         )}
         {metadata && <span className={purged ? 'on' : 'bad'}>{metadata}</span>}
         <span className={activationAlive(events) ? 'on' : ''}>
-          {activationAlive(events) ? `activation alive${expected ? `, expectedToken ${short(expected)}` : ''}` : 'no activation'}
+          {activationAlive(events) ? `grain active${expected ? `, expectedToken ${short(expected)}` : ''}` : 'grain not active'}
         </span>
       </div>
       <div className="track">

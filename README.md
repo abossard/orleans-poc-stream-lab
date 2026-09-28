@@ -4,7 +4,7 @@ One consumer grain with an [implicit subscription](https://learn.microsoft.com/d
 
 ![Live UI: a quiet stream loses event 2 on Orleans 10.2.1 and gets it on 10.3.1](docs/live-ui-E.gif)
 
-Left lane Orleans 10.2.1, right lane 10.3.1, each reading its own Event Hub. A consumer grain gets event 1, and its stream stays quiet for 12 s while other traffic pushes event 1 out of the queue cache. Then event 2 arrives. 10.2.1 reports `QueueCacheMissException` (`▲`) and never delivers event 2 (`✕2`). 10.3.1 delivers it (`●2`). The recording runs at 4x. Orleans issue [#8863](https://github.com/dotnet/orleans/issues/8863) reports the same loss after more than 20 min of quiet. 10.3.x avoids it on Event Hub with a cursor refresh ([#10266](https://github.com/dotnet/orleans/pull/10266)). The general recovery that closed the issue ([#9711](https://github.com/dotnet/orleans/pull/9711), [#9714](https://github.com/dotnet/orleans/pull/9714)) is on `main` only.
+Left: Orleans 10.2.1. Right: Orleans 10.3.1. Each reads its own Event Hub. A consumer grain gets event 1, and its stream stays quiet for 12 s while other traffic pushes event 1 out of the queue cache. Then event 2 arrives. 10.2.1 reports `QueueCacheMissException` (`▲`) and never delivers event 2 (`✕2`). 10.3.1 delivers it (`●2`). The recording runs at 4x. Orleans issue [#8863](https://github.com/dotnet/orleans/issues/8863) reports the same loss after more than 20 min of quiet. 10.3.x avoids it on Event Hub with a cursor refresh ([#10266](https://github.com/dotnet/orleans/pull/10266)). The general recovery that closed the issue ([#9711](https://github.com/dotnet/orleans/pull/9711), [#9714](https://github.com/dotnet/orleans/pull/9714)) is on `main` only.
 
 ## Get started
 
@@ -14,11 +14,11 @@ Live UI. You need only Docker: compose builds both backends and runs the [Event 
 cd live
 docker compose up --build -d     # first build takes a few minutes
 open http://localhost:8103       # the page reads both backends: 8102 (10.2.1) and 8103 (10.3.1)
-./smoke.sh                       # publishes on both lanes, expects OnNextAsync on /api/events
+./smoke.sh                       # publishes on both versions, expects OnNextAsync on /api/events
 docker compose down
 ```
 
-Each **Run** button runs one scenario on both lanes, and the Terms panel links every Orleans term to its source. The details page explains the [scenarios](docs/streams-explained.md#what-happens-when-a-stream-goes-quiet) and [every marker](docs/streams-explained.md#live-ui-walkthrough).
+Each **Run** button runs one scenario on both versions at the same time, and the Terms panel links every Orleans term to its source. The details page explains the [scenarios](docs/streams-explained.md#what-happens-when-a-stream-goes-quiet) and [every marker](docs/streams-explained.md#live-ui-walkthrough).
 
 CLI. You need the [.NET 10 SDK](https://dotnet.microsoft.com/download/dotnet/10.0), plus Docker for the Event Hub transport.
 
