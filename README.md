@@ -71,7 +71,23 @@ The [queue cache](https://learn.microsoft.com/dotnet/orleans/implementation/stre
 
 ## What happens when a stream goes quiet
 
-S is the consumer grain's own stream. The grain gets event 1, S stays quiet, then event 2 arrives. The quiet time picks the path. Times use the example config above. The edges shift by up to 2 min, because the cache expires `lastPurgedToken` entries every `MetadataMinTimeInCache / 5`, and by up to 3 min, because cleanup runs every `StreamInactivityPeriod / 10`. The PoC column uses the lab's short timings.
+S is the consumer grain's own stream. The grain gets event 1, S stays quiet, then event 2 arrives. The quiet time picks the path.
+
+The lab runs this as scenarios with short timings: `DataMaxAgeInCache` 3 s, `MetadataMinTimeInCache` 5 s, `StreamInactivityPeriod` 20 s, `CollectionAge` 10 s. A filler stream on the same partition publishes every 500 ms, so the cache keeps purging while S is quiet.
+
+| Scenario | Setup | What it shows |
+|---|---|---|
+| A | event 1, 26 s quiet, `Ping()` every 3 s keeps the activation alive, event 2 | handshake path |
+| B | as A, no `Ping()` | Orleans collects the activation, the new one returns `null` from `GetSequenceToken()`, no error |
+| C | 20-event burst, event 1 takes 6 s | slow consumer: the cache purges events 2..20 before delivery, both versions report the miss and skip them |
+| D | as A, `MetadataMinTimeInCache` 10 min | `lastPurgedToken` still present, the stale token resumes at the oldest message |
+| E | as A, 12 s quiet | idle-cursor path |
+| A-mid, E-mid | `DataMaxAgeInCache` 6 s (E-mid: 17 s quiet) | a bigger cache that is still shorter than the quiet period changes nothing |
+| A-big, E-big | `DataMaxAgeInCache` 40 s | the cache still holds S's token, no miss |
+| A-meta, E-meta | `MetadataMinTimeInCache` 40 s | the cache still has S's `lastPurgedToken`, no miss |
+| C-big | as C, `DataMaxAgeInCache` 40 s | the cache outlasts the lag, nothing lost |
+
+The next table uses the example config from the diagram. The edges shift by up to 2 min, because the cache expires `lastPurgedToken` entries every `MetadataMinTimeInCache / 5`, and by up to 3 min, because cleanup runs every `StreamInactivityPeriod / 10`. The PoC column uses the lab timings.
 
 | Quiet before event 2 | PoC | What Orleans does | 10.2.1 | 10.3.1, Event Hub | Scenarios | Live UI |
 |---|---|---|---|---|---|---|
@@ -175,7 +191,7 @@ dotnet artifacts/10.2.1/bin/Release/net10.0/Poc.dll --transport eventhub --scena
 
 Output: `results/<version>-<transport>.json` and `.md` (callback timeline per scenario), `results/logs/<version>-<transport>-<scenario>.log` (silo log, pulling agent at Debug) and `results/summary.md`. Each run prints the loaded `Orleans.Streaming` version and path.
 
-## Scenarios and results
+## Setup and results
 
 `ConsumerGrain` calls `handleFactory.Create<T>().ResumeAsync(this)` in `OnSubscribed`, only records in `OnErrorAsync`, and publishes on its own stream in `Update(v)`. `HandshakeProbe`, a silo-side [incoming grain call filter](https://learn.microsoft.com/dotnet/orleans/grains/interceptors#incoming-call-filters), records what `GetSequenceToken()` returns, and pulling-agent log lines about S go into the timeline. Stream provider: `AddMemoryStreams` or [`AddEventHubStreams`](https://learn.microsoft.com/dotnet/orleans/streaming/stream-providers#azure-event-hub-stream-provider) (emulator, Azure Table checkpointer on Azurite), `StreamPubSubType.ImplicitOnly`, 1 partition.
 
@@ -187,19 +203,6 @@ Output: `results/<version>-<transport>.json` and `.md` (callback timeline per sc
 | `CollectionAge` / `CollectionQuantum` | 10 s / 2 s | 15 min / 1 min |
 | `StatisticMonitorWriteInterval` (cache stats via `MeterListener`) | 1 s | 5 min |
 | Keep-alive | `Ping()` every 3 s | |
-| Quiet period before event 2 | 26 s (A, B, D, `A-*`), 12 s (E, `E-big`, `E-meta`), 17 s (`E-mid`) | |
-
-| Scenario | Change from A | What it shows |
-|---|---|---|
-| A | | handshake path |
-| B | no `Ping()` | Orleans collects the activation, the new one returns `null` from `GetSequenceToken()`, no error |
-| C | 20-event burst, event 1 takes 6 s | slow consumer: the cache purges events 2..20 before delivery, both versions report the miss and skip them |
-| D | `MetadataMinTimeInCache` 10 min | `lastPurgedToken` still present, the stale token resumes at the oldest message |
-| E | quiet 12 s | idle-cursor path |
-| A-mid, E-mid | `DataMaxAgeInCache` 6 s | a bigger cache that is still shorter than the quiet period changes nothing |
-| A-big, E-big | `DataMaxAgeInCache` 40 s | the cache still holds S's token, no miss |
-| A-meta, E-meta | `MetadataMinTimeInCache` 40 s | the cache still has S's `lastPurgedToken`, no miss |
-| C-big | as C, `DataMaxAgeInCache` 40 s | the cache outlasts the lag, nothing lost |
 
 All 48 runs (12 scenarios x 2 versions x 2 transports) match the expectations in `src/Poc/Scenarios.cs`; [results/summary.md](results/summary.md) has the full table. Each cell reads OnErrorAsync / delivered / lost on S's grain (QCME = `QueueCacheMissException`). "Max cached" is the peak `orleans-streams-queue-cache-length` on the partition at about 2 events/s, over the runs in the row.
 
