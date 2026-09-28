@@ -127,7 +127,7 @@ What to click:
 
 - **Run A** (handshake path): both versions restart on a scenario silo, and event 2 arrives after 26 s. The markers per version are in the [quiet table](#what-happens-when-a-stream-goes-quiet). In the `▲` log line, `Requested` is older than `Low`.
 - **Run E** (idle-cursor path): event 2 arrives after 12 s while the agent still has S registered. Before it arrives, the cache bar shows the cursor older than the oldest cached event and the badge `lastPurgedToken expired`. On 10.2.1 the `▲` log line shows `Requested: seq N (empty offset)`, and the cache later purges the undelivered event 2.
-- **Run B, C, D** and the variants: as in the [scenario table](#what-happens-when-a-stream-goes-quiet). The result line under each version's header shows the coded expectation and PASS or FAIL.
+- **Run B, C, D** and the variants: as in the [scenario table](#what-happens-when-a-stream-goes-quiet). The result line under each version's header shows what Orleans did: green when it delivered every event, yellow when it reported an error and lost nothing, red when it lost events. The text also says whether that is the expected result for this version, and a red outline marks an unexpected one.
 - **Publish on both versions** publishes on the live silo that runs between scenarios (scenario A timings, fillers, `Ping()` for published keys). Publish `s1`, wait 12 s and publish again for path E, or wait 26 s for path A.
 - **Reset** with `memory` selected switches both versions to memory streams. E then loses event 2 on 10.3.1 as well.
 

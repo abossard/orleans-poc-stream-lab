@@ -209,7 +209,11 @@ public sealed class Lane : IHostedService
             settings = Scenarios.Find(scenario);
             var r = await new Scenarios(transport, Orleans, LogDir).Run(scenario, 1, timeline, sp => silo = sp);
             silo = null;
-            feed.Add("driver", "", "Result", $"{(r.Pass ? "PASS" : "FAIL")}. Expected: {r.Expected}. Observed: {r.Observed}");
+            // The page colors the result line by these first words: what Orleans did, not whether the test passed.
+            var outcome = r.Lost.Length > 0 ? $"Lost {r.Lost.Length} of {r.Published.Length} events"
+                : r.OnErrorCount > 0 ? "Error reported, nothing lost"
+                : "All events delivered";
+            feed.Add("driver", "", "Result", $"{outcome}. {(r.Pass ? "As expected" : "NOT as expected")} for Orleans {Orleans}: {r.Expected}. Observed: {r.Observed}");
         }
 
         status = "starting live silo";

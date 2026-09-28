@@ -47,6 +47,10 @@ const pretty = (detail: string) =>
     .replace(/\[EventSequenceToken: SeqNum=(\d+), EventIndex=\d+\]/g, (_, s) => `seq ${short(s)}`)
     .replace(/\d{12,}/g, short)
 const lastOf = (events: FeedEvent[], ...kinds: string[]) => events.findLast(e => kinds.includes(e.kind))
+// Color by what Orleans did (see Lane.Restart in src/Live/Program.cs), not by whether the expectation matched.
+const outcome = (e: FeedEvent) =>
+  (e.kind === 'Error' || e.detail.startsWith('Lost') ? 'res-loss' : e.detail.startsWith('Error reported') ? 'res-warn' : 'res-ok') +
+  (e.detail.includes('NOT as expected') ? ' unexpected' : '')
 const activationAlive = (events: FeedEvent[]) => lastOf(events, 'Activated', 'Deactivated')?.kind === 'Activated'
 const expectedToken = (events: FeedEvent[]) => (activationAlive(events) ? seqs(lastOf(events, 'OnNextAsync')?.detail ?? '')[0] : undefined)
 
@@ -166,7 +170,7 @@ function Lane({ url }: { url: string }) {
           {state.settings.metadataMinTimeInCache} s, StreamInactivityPeriod {state.settings.streamInactivityPeriod} s
         </p>
       )}
-      {result && <p className={`result ${result.detail.startsWith('PASS') ? 'pass' : 'fail'}`}>{result.detail}</p>}
+      {result && <p className={`result ${outcome(result)}`}>{result.detail}</p>}
       <CacheStrip state={state} events={events} />
       <div className="axis">
         {ticks.map(t => (
